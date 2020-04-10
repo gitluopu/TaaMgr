@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="SshLogin.SShLoginCtl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SshLogin"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="ip" Width="60" Margin="5"></TextBlock>
+            <TextBox Text="{Binding m_ip}" Width="100" Margin="5"></TextBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="user" Width="60" Margin="5"></TextBlock>
+            <TextBox Text="{Binding m_user}" Width="100" Margin="5"></TextBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="password" Width="60" Margin="5"></TextBlock>
+            <PasswordBox x:FieldModifier="public" x:Name="m_pwBox" Width="100" Margin="5"></PasswordBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Button Content="connect" x:Name="m_btnConnect" Click="BtnConnectClick" Width="80" Margin="5"></Button>
+            <Button Content="disconnect" x:Name="m_btnDisconnect" Click="BtnDisconnectClick" Width="80" Margin="5"></Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>
