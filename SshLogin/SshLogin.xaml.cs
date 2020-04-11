@@ -62,9 +62,10 @@ namespace SshLogin
             m_btnConnect.IsEnabled = true;
             m_btnDisconnect.IsEnabled = false;
             OnDisconnect?.Invoke(this, e);
+           
         }
-        private SshClient m_ssh;
-        private ScpClient m_scp;
+        public SshClient m_ssh { get; private set; }
+        public ScpClient m_scp { get; private set; }
         private string _m_ip;
 
         public string m_ip

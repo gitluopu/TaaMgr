@@ -80,5 +80,15 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\CommonCmd\CommonCmd.csproj">
+      <Project>{f2ace5d6-f740-42c3-a830-76c05df90eb3}</Project>
+      <Name>CommonCmd</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{389afe80-9fb3-4469-bed9-5989de40a1a9}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

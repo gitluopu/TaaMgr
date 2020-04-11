@@ -7,25 +7,29 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <DataTemplate x:Key="confName">
-            <TextBlock Text="{Binding m_name}" MinWidth="100"/>
-        </DataTemplate>
-        <DataTemplate x:Key="confValue">
-            <TextBox Text="{Binding m_value}" MinWidth="200"/>
-        </DataTemplate>
+    <DataTemplate x:Key="confName">
+        <TextBlock Text="{Binding m_name}" Width="100"/>
+    </DataTemplate>
+    <DataTemplate x:Key="confValue">
+        <TextBox Text="{Binding m_value}" Width="200"/>
+    </DataTemplate>
     </UserControl.Resources>
-    <StackPanel>
-        <ListView  ItemsSource="{Binding m_confs}" Grid.Row="0">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="90*"></RowDefinition>
+            <RowDefinition Height="10*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <ListView  ItemsSource="{Binding m_confs}" Grid.Row="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="name" CellTemplate="{StaticResource confName}" />
-                    <GridViewColumn Header="value" CellTemplate="{StaticResource confValue}" />
+                    <GridViewColumn Header="name" CellTemplate="{StaticResource confName}" Width="100"/>
+                    <GridViewColumn Header="value" CellTemplate="{StaticResource confValue}" Width="400" />
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Orientation="Horizontal">
-            <Button Content="hello" Width="80" Margin="5"></Button>
-            <Button Content="world" Width="80" Margin="5"></Button>
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <Button Content="save" Width="80" Margin="5"></Button>
+            <Button Content="cancel" Width="80" Margin="5"></Button>
         </StackPanel>
-    </StackPanel>
+    </Grid>
 </UserControl>
