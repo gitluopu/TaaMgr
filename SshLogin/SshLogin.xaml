@@ -20,8 +20,7 @@
             <PasswordBox x:FieldModifier="public" x:Name="m_pwBox" Width="100" Margin="5"></PasswordBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal">
-            <Button Content="connect" x:Name="m_btnConnect" Click="BtnConnectClick" Width="80" Margin="5"></Button>
-            <Button Content="disconnect" x:Name="m_btnDisconnect" Click="BtnDisconnectClick" Width="80" Margin="5"></Button>
+            <Button Content="login" x:Name="m_btnLogin" Click="LoginClick" Width="120" Margin="30,5,5,5"></Button>
         </StackPanel>
     </StackPanel>
 </UserControl>

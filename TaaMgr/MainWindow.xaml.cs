@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using System.Configuration;
 using SshLogin;
 using TaaConf;
-using CommonCmd;
+using CmdLib;
 using Common;
 using KafkaCtl;
 using System.IO;
@@ -30,8 +30,7 @@ namespace TaaMgr
         public MainWindow()
         {
             InitializeComponent();
-            m_confCtl.Visibility = Visibility.Hidden;
-
+            m_confCtl.Visibility = Visibility.Collapsed;
             //set txtbox property
             m_txtKafkaLog.TextWrapping = TextWrapping.Wrap;
             m_txtKafkaLog.AutoWordSelection = true;
@@ -61,16 +60,17 @@ namespace TaaMgr
             //
             //cfa.AppSettings.Settings["NAME"].Value = "WANGLICHAO";
         }
-        private void SShLoginOnConnect(object sender, RoutedEventArgs e)
+        private void SShLoginOnLogin(object sender, RoutedEventArgs e)
         {
-            m_confCtl.Visibility = Visibility.Visible;
-            var sshLogin = sender as SShLoginCtl;
-            Configuration cf = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            cf.AppSettings.Settings["sshIp"].Value = sshLogin.m_ip;
-            cf.AppSettings.Settings["sshUser"].Value = sshLogin.m_user;
-            cf.AppSettings.Settings["sshPasswd"].Value = sshLogin.m_passwd;
-            cf.Save();
-
+            Task.Run(() => {
+                m_sshLoginCtl.Dispatcher.Invoke(() => { m_sshLoginCtl.Visibility = Visibility.Collapsed; });
+                m_confCtl.Dispatcher.Invoke(() => { m_confCtl.Visibility = Visibility.Visible; });
+                Configuration cf = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                cf.AppSettings.Settings["sshIp"].Value = m_sshLoginCtl.m_ip;
+                cf.AppSettings.Settings["sshUser"].Value = m_sshLoginCtl.m_user;
+                cf.AppSettings.Settings["sshPasswd"].Value = m_sshLoginCtl.m_passwd;
+                cf.Save();
+            });
         }
         private void SShLoginOnDisconnect(object sender, RoutedEventArgs e)
         {
@@ -88,6 +88,26 @@ namespace TaaMgr
                 m_confCtl.m_icmd = null;
             }
         }
+        private void TaaConfOnLogout(object sender, RoutedEventArgs e)
+        {
+            m_confCtl.Visibility = Visibility.Collapsed;
+            m_sshLoginCtl.Visibility = Visibility.Visible;
+            m_sshLoginCtl.Logout(sender,e);
+        }
+        
+        private void TaaCmdIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            //if (m_taaCmdCtl.Visibility == Visibility.Visible)
+            //{
+            //    //m_confCtl.m_icmd = new TaaCmdUnix(new Glue.SShCmd(m_sshLoginCtl.m_ssh, m_sshLoginCtl.m_scp));
+            //    //m_confCtl.InitData();
+            //}
+            //else
+            //{
+            //    //m_confCtl.m_icmd = null;
+            //}
+        }
+        
         private void OnConsumerLoaded(object sender, RoutedEventArgs e)
         {
 

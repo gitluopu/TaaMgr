@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Renci.SshNet;
 using Common;
 using TaaConf;
-using CommonCmd;
+using CmdLib;
 using System.IO;
 
 namespace TaaMgr.Glue

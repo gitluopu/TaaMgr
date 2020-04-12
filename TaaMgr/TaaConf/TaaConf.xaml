@@ -15,11 +15,24 @@
     </DataTemplate>
     </UserControl.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="90*"></RowDefinition>
-            <RowDefinition Height="10*"></RowDefinition>
-        </Grid.RowDefinitions>
-        <ListView  ItemsSource="{Binding m_confs}" Grid.Row="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="50*"></ColumnDefinition>
+            <ColumnDefinition Width="50*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0">
+            <StackPanel Orientation="Horizontal">
+            <StackPanel>
+                <Button Content="start" Click="TaaStartClick"></Button>
+                <Button Content="restart" Click="TaaRestartClick"></Button>
+                <Button Content="stop" Click="TaaStopClick"></Button>
+            </StackPanel>
+                <StackPanel>
+                    
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Column="1">
+        <ListView  ItemsSource="{Binding m_confs}"  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="name" CellTemplate="{StaticResource confName}" Width="100"/>
@@ -28,8 +41,11 @@
             </ListView.View>
         </ListView>
         <StackPanel Orientation="Horizontal" Grid.Row="1">
-            <Button Content="save" Width="80" Margin="5"></Button>
-            <Button Content="cancel" Width="80" Margin="5"></Button>
+            <Button Content="save" Click="SaveClick" Width="80" Margin="5"></Button>
+            <Button Content="refresh" Click="RefreshClick" Width="80" Margin="5"></Button>
+            <Button Content="cancel" Click="CancelClick" Width="80" Margin="5"></Button>
+            <Button Content="logout" Click="LogoutClick" Width="80" Margin="5"></Button>
+        </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>

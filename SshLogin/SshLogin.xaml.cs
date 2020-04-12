@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,45 +25,46 @@ namespace SshLogin
         public SShLoginCtl()
         {
             InitializeComponent();
-            m_btnConnect.IsEnabled = true;
-            m_btnDisconnect.IsEnabled = false;
             DataContext = this;
         }
 
         
-        private void BtnConnectClick(object sender, RoutedEventArgs arg)
+        private async void LoginClick(object sender, RoutedEventArgs arg)
         {
-            m_passwd = m_pwBox.Password;
-            m_ssh = new SshClient(m_ip, m_user, m_passwd);
-            m_ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(3);
-            m_scp = new ScpClient(m_ip, m_user, m_passwd);
-            m_scp.ConnectionInfo.Timeout = TimeSpan.FromSeconds(3);
-            try
+            await Task.Run(() =>
             {
-                m_ssh.Connect();
-                m_scp.Connect();
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-                if(m_ssh.IsConnected)
+                m_btnLogin.Dispatcher.Invoke(()=> { m_btnLogin.IsEnabled = false; });
+                
+                m_passwd = m_pwBox.Password;
+                m_ssh = new SshClient(m_ip, m_user, m_passwd);
+                m_ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(3);
+                m_scp = new ScpClient(m_ip, m_user, m_passwd);
+                m_scp.ConnectionInfo.Timeout = TimeSpan.FromSeconds(3);
+                try
                 {
-                    m_ssh.Disconnect();
+                    m_ssh.Connect();
+                    m_scp.Connect();
                 }
-                return;
-            }
-            m_btnConnect.IsEnabled = false;
-            m_btnDisconnect.IsEnabled = true;
-            OnConnect?.Invoke(this,arg);
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                    if (m_ssh.IsConnected)
+                    {
+                        m_ssh.Disconnect();
+                    }
+                    m_btnLogin.Dispatcher.Invoke(() => { m_btnLogin.IsEnabled = true; });
+                    return;
+                }
+
+                OnLogin?.Invoke(this, arg);
+            });
         }
-        private void BtnDisconnectClick(object sender, RoutedEventArgs e)
+        
+        public void Logout(object sender, RoutedEventArgs e)
         {
-            m_ssh.Disconnect();
             m_scp.Disconnect();
-            m_btnConnect.IsEnabled = true;
-            m_btnDisconnect.IsEnabled = false;
-            OnDisconnect?.Invoke(this, e);
-           
+            m_ssh.Disconnect();
+            m_btnLogin.IsEnabled = true;
         }
         public SshClient m_ssh { get; private set; }
         public ScpClient m_scp { get; private set; }
@@ -91,8 +93,7 @@ namespace SshLogin
         }
 
         public string m_passwd { get; set; }
-        public event RoutedEventHandler OnConnect;
-        public event RoutedEventHandler OnDisconnect;
+        public event RoutedEventHandler OnLogin;
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)

@@ -14,7 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using CommonCmd;
+using CmdLib;
 namespace TaaConf
 {
     /// <summary>
@@ -28,15 +28,30 @@ namespace TaaConf
             m_confs = new List<ConfItem>();
             m_confs.Add(new ConfItem("version", () => { return m_icmd.GetVersion(); }, null));
             m_confs.Add(new ConfItem("broker",()=>{ return m_icmd.GetBroker();},null));
-            //m_confs.Add(new ConfItem("version",);
-            //m_confs.Add(new ConfItem("version",);
-            //m_confs.Add(new ConfItem("version",);
-            //m_confs.Add(new ConfItem("version",);
-            //m_confs.Add(new ConfItem("version",);
-            //m_confs.Add(new ConfItem("version",);
-            //m_confs.Add(new ConfItem("version",);
+            m_confs.Add(new ConfItem("save2file", () => { return m_icmd.GetSave2File(); }, null));
+
             DataContext = this;
         }
+        private void SaveClick(object sender,RoutedEventArgs e)
+        {
+            //m_icmd.GetCmnCmd().RunCommand("");
+        }
+        private void RefreshClick(object sender, RoutedEventArgs e)
+        {
+            InitData();
+        }
+        private void CancelClick(object sender, RoutedEventArgs e)
+        {
+            foreach(var ele in m_confs)
+            {
+                ele.m_value = ele.m_valueBak;
+            }
+        }
+        private void LogoutClick(object sender, RoutedEventArgs e)
+        {
+            OnLogout?.Invoke(sender,e);
+        }
+        
         public class ConfItem : INotifyPropertyChanged
         {
             public event PropertyChangedEventHandler PropertyChanged;
@@ -88,11 +103,14 @@ namespace TaaConf
                 di.Delete(true);
             }
             di.Create();
-            try { 
-            m_icmd.GetCmnCmd().Download(remoteSvrluginPath,di);
-            }catch(Exception ex)
+            try
+            {
+                m_icmd.GetCmnCmd().Download(remoteSvrluginPath, di);
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+                return;
             }
             foreach (var ele in m_confs)
             {
@@ -106,7 +124,22 @@ namespace TaaConf
                 ele.SetDataChanged();
             }
         }
+        public event RoutedEventHandler OnLogout;
         public List<ConfItem> m_confs { get; set; }
         public ITaaCmd m_icmd;
+
+
+        private void TaaStartClick(object sender, RoutedEventArgs e)
+        {
+            m_icmd.GetCmnCmd().RunCommand("systemctl start in-sec-taa");
+        }
+        private void TaaStopClick(object sender, RoutedEventArgs e)
+        {
+            m_icmd.GetCmnCmd().RunCommand("systemctl stop in-sec-taa");
+        }
+        private void TaaRestartClick(object sender, RoutedEventArgs e)
+        {
+            m_icmd.GetCmnCmd().RunCommand("systemctl restart in-sec-taa");
+        }
     }
 }

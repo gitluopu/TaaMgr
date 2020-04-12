@@ -4,19 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4ECF72A6-8E1A-468C-9196-EA3CFD32D793}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <RootNamespace>TaaMgr</RootNamespace>
-    <AssemblyName>TaaMgr</AssemblyName>
+    <ProjectGuid>{98EB6802-4302-45D1-BB3D-BDD5E830E7AD}</ProjectGuid>
+    <OutputType>library</OutputType>
+    <RootNamespace>TaaCmd</RootNamespace>
+    <AssemblyName>TaaCmd</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -26,7 +24,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -35,11 +32,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Renci.SshNet, Version=2016.1.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
-      <HintPath>packages\SSH.NET.2016.1.0\lib\net40\Renci.SshNet.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -55,21 +48,12 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-    <Page Include="MainWindow.xaml">
+    <Page Include="TaaCmd.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Glue\ConfAndCmd.cs" />
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="TaaCmd.xaml.cs">
+      <DependentUpon>TaaCmd.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -91,37 +75,20 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SshLogin\SShLogin.csproj">
-      <Project>{BB62288D-01A6-418A-B556-C1713CAEEFB6}</Project>
-      <Name>SShLogin</Name>
-    </ProjectReference>
-    <ProjectReference Include="CmdLib\CmdLib.csproj">
+    <ProjectReference Include="..\CmdLib\CmdLib.csproj">
       <Project>{3d76fc2a-6fac-46a0-b69e-4557b713d667}</Project>
       <Name>CmdLib</Name>
     </ProjectReference>
-    <ProjectReference Include="Common\Common.csproj">
+    <ProjectReference Include="..\Common\Common.csproj">
       <Project>{389afe80-9fb3-4469-bed9-5989de40a1a9}</Project>
       <Name>Common</Name>
     </ProjectReference>
-    <ProjectReference Include="KafkaCtl\KafkaCtl.csproj">
-      <Project>{31B19963-CEB6-4823-A80E-97B57BBAF930}</Project>
-      <Name>KafkaCtl</Name>
-    </ProjectReference>
-    <ProjectReference Include="TaaConf\TaaConf.csproj">
-      <Project>{A99514F1-11F8-4654-86AD-1E513774707D}</Project>
-      <Name>TaaConf</Name>
-    </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
