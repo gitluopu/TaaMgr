@@ -11,8 +11,8 @@
         <TabControl>
             <TabItem Header="taa">
                 <Grid>
-                <SshLogin:SShLoginCtl x:Name="m_sshLoginCtl" Loaded="SShLoginOnLoad" OnLogin="SShLoginOnLogin" HorizontalAlignment="Center" VerticalAlignment="center"/>
-                <TaaConf:TaaConfCtl x:Name="m_confCtl" IsVisibleChanged="TaaConfIsVisibleChanged" OnLogout="TaaConfOnLogout" />
+                <SshLogin:SShLoginCtl x:Name="m_sshLoginCtl" Loaded="SShLoginOnLoad" OnLogin="SShOnLogin" OnLogout="SShOnLogout"  HorizontalAlignment="Center" VerticalAlignment="center"/>
+                <TaaConf:TaaConfCtl x:Name="m_confCtl"  OnLogout="TaaConfOnLogout" />
                 </Grid>
             </TabItem>
             <TabItem Header="kafka">

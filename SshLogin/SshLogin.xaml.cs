@@ -55,11 +55,22 @@ namespace SshLogin
                     m_btnLogin.Dispatcher.Invoke(() => { m_btnLogin.IsEnabled = true; });
                     return;
                 }
-
+                //if(m_user!="root") //try to login as root
+                //{
+                //    IDictionary<Renci.SshNet.Common.TerminalModes, uint> termkvp = new Dictionary<Renci.SshNet.Common.TerminalModes, uint>();
+                //    termkvp.Add(Renci.SshNet.Common.TerminalModes.ECHO, 53);
+                //    ShellStream shellStream = m_ssh.CreateShellStream("xterm", 80, 24, 800, 600, 1024, termkvp);
+                //    shellStream.WriteLine("su root");
+                //    shellStream.Expect("Password:");
+                //    shellStream.WriteLine("Silvers$R7!");
+                //}
                 OnLogin?.Invoke(this, arg);
             });
         }
-        
+        public void Login(object sender, RoutedEventArgs e)
+        {
+           
+        }
         public void Logout(object sender, RoutedEventArgs e)
         {
             m_scp.Disconnect();
@@ -94,6 +105,7 @@ namespace SshLogin
 
         public string m_passwd { get; set; }
         public event RoutedEventHandler OnLogin;
+        public event RoutedEventHandler OnLogout;
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,30 +27,70 @@ namespace KafkaCtl
         {
             InitializeComponent();
             m_btnConsume.IsEnabled = true;
+            m_btnStop.IsEnabled = false;
             DataContext = this;
         }
 
         private void ConsumeClick(object sender, RoutedEventArgs arg)
         {
             m_btnConsume.IsEnabled = false;
-            Task.Run(() =>
+            m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = true; });
+            string ip;
+            string port;
+            string broker;
+            if (m_broker.Contains(":"))
             {
-                string broker;
+                string[] ary = m_broker.Split(':');
+                ip = ary[0];
+                port = ary[1];
+                broker = m_broker;
+            }
+            else
+            {
+                ip = m_broker;
+                port = "9092";
+                broker = ip + ":" + port;
+            }
+            using (var tcpClient = new TcpClient())
+            {
+                try
+                {
+                    if (!tcpClient.ConnectAsync(ip, int.Parse(port)).Wait(3000))
+                    {
+                        throw new Exception("connect to " + ip + ":" + port + " timeout within 3000ms");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string msg = ex.Message;
+                    if (ex.InnerException != null)
+                    {
+                        msg += ex.Message;
+                    }
+                    m_btnConsume.IsEnabled = true;
+                    m_btnStop.IsEnabled = false;
+                    MessageBox.Show(msg);
+                    return;
+                }
+            }
+                Task.Run(() =>
+            {
+
                 UInt32 cntMax = UInt32.Parse(m_cnt);
-                if (m_broker.Contains(":"))
-                {
-                    broker = m_broker;
-                }
-                else
-                {
-                    broker = m_broker + ":9092";
-                }
+                m_cts = new CancellationTokenSource();
+
                 var conf = new ConsumerConfig
                 {
                     GroupId = "test-consumer-group",
 
                     BootstrapServers = m_broker,
-                    SocketTimeoutMs = 3000,
+                    //SocketTimeoutMs = 1000,
+                    //SessionTimeoutMs = 1000,
+                    //MetadataRequestTimeoutMs=1000,
+                    ReconnectBackoffMs = 1000,
+                    ReconnectBackoffMaxMs = 3000,
+
+
                     // Note: The AutoOffsetReset property determines the start offset in the event
                     // there are not yet any committed offsets for the consumer group for the
                     // topic/partitions of interest. By default, offsets are committed
@@ -60,7 +101,6 @@ namespace KafkaCtl
                 using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
                 {
                     c.Subscribe(m_topic);
-                    m_cts = new CancellationTokenSource();
                     uint cnt = 0;
                     try
                     {
@@ -75,7 +115,7 @@ namespace KafkaCtl
                                 {
                                     if (cnt >= cntMax)
                                     {
-                                        m_cts.Cancel();
+                                        c.Close();
                                         break;
                                     }
                                 }
@@ -98,22 +138,24 @@ namespace KafkaCtl
                     }
                 }
                 m_btnConsume.Dispatcher.Invoke(() => { m_btnConsume.IsEnabled = true; });
+                m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = false; });
             });
         }
         private void StopClick(object sender, RoutedEventArgs arg)
         {
-            if(m_cts!=null)
-            {
-                m_cts.Cancel();
-            }
+            m_cts.Cancel();
+            m_cts.Dispose();
             m_btnConsume.IsEnabled = true;
+            m_btnStop.IsEnabled = false;
         }
         private string _m_broker;
 
         public string m_broker
         {
             get { return _m_broker; }
-            set { _m_broker = value;
+            set
+            {
+                _m_broker = value;
                 OnPropertyChanged("m_broker");
             }
         }
@@ -122,7 +164,9 @@ namespace KafkaCtl
         public string m_topic
         {
             get { return _m_topic; }
-            set { _m_topic = value;
+            set
+            {
+                _m_topic = value;
                 OnPropertyChanged("m_topic");
             }
         }
@@ -132,7 +176,9 @@ namespace KafkaCtl
         public string m_cnt
         {
             get { return _m_cnt; }
-            set { _m_cnt = value;
+            set
+            {
+                _m_cnt = value;
                 OnPropertyChanged("m_cnt");
             }
         }

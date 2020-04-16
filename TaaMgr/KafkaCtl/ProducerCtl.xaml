@@ -29,7 +29,7 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal">
             <Button Content="produce" x:Name="m_btnProduce" Click="ProduceClick" Width="80" Margin="5"></Button>
-            <Button Content="stop"  Click="StopClick" Width="80" Margin="5"></Button>
+            <Button Content="stop" x:Name="m_btnStop" Click="StopClick" Width="80" Margin="5"></Button>
         </StackPanel>
     </StackPanel>
 </UserControl>

@@ -8,44 +8,58 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
     <DataTemplate x:Key="confName">
-        <TextBlock Text="{Binding m_name}" Width="100"/>
+        <TextBlock Text="{Binding m_name}"/>
     </DataTemplate>
-    <DataTemplate x:Key="confValue">
-        <TextBox Text="{Binding m_value}" Width="200"/>
-    </DataTemplate>
+        <DataTemplate x:Key="confValue">
+            <TextBox Text="{Binding m_value}" MinWidth="150" BorderThickness="0"/>
+        </DataTemplate>
+        <Style x:Key="btnStyle" TargetType="Button">
+            <Setter Property="Width" Value="80"></Setter>
+            <Setter Property="Margin" Value="5"></Setter>
+        </Style>
+        <Style x:Key="RunStatus" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="red"></Setter>
+            <Style.Triggers>
+                <Trigger Property="Text" Value="running">
+                    <Setter Property="Foreground" Value="Green"></Setter>
+                </Trigger>
+                <Trigger Property="Text" Value="unknown">
+                    <Setter Property="Foreground" Value="red"></Setter>
+                </Trigger>
+                <Trigger Property="Text" Value="stop">
+                    <Setter Property="Foreground" Value="Yellow"></Setter>
+                </Trigger>
+            </Style.Triggers>
+            
+        </Style>
     </UserControl.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="50*"></ColumnDefinition>
-            <ColumnDefinition Width="50*"></ColumnDefinition>
-        </Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0">
-            <StackPanel Orientation="Horizontal">
-            <StackPanel>
-                <Button Content="start" Click="TaaStartClick"></Button>
-                <Button Content="restart" Click="TaaRestartClick"></Button>
-                <Button Content="stop" Click="TaaStopClick"></Button>
-            </StackPanel>
-                <StackPanel>
-                    
-                </StackPanel>
-            </StackPanel>
-        </StackPanel>
-        <StackPanel Grid.Column="1">
-        <ListView  ItemsSource="{Binding m_confs}"  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="name" CellTemplate="{StaticResource confName}" Width="100"/>
-                    <GridViewColumn Header="value" CellTemplate="{StaticResource confValue}" Width="400" />
-                </GridView>
-            </ListView.View>
-        </ListView>
-        <StackPanel Orientation="Horizontal" Grid.Row="1">
+    <DockPanel LastChildFill="False">
+        <StatusBar DockPanel.Dock="Bottom" >
+            <TextBlock Text="{Binding m_taaIp}"></TextBlock>
+            <TextBlock Text="{Binding m_taaStatus}" Style="{StaticResource RunStatus}"></TextBlock>
+            <TextBlock Text="{Binding m_taaInfs}"></TextBlock>
+        </StatusBar>
+        <ListBox DockPanel.Dock="Left">
+            <Button Content="start" Click="TaaStartClick" Style="{StaticResource btnStyle}"></Button>
+            <Button Content="restart" Click="TaaRestartClick" Style="{StaticResource btnStyle}"></Button>
+            <Button Content="stop" Click="TaaStopClick" Style="{StaticResource btnStyle}"></Button>
+        </ListBox>
+        <ListBox  DockPanel.Dock="Right">
             <Button Content="save" Click="SaveClick" Width="80" Margin="5"></Button>
-            <Button Content="refresh" Click="RefreshClick" Width="80" Margin="5"></Button>
-            <Button Content="cancel" Click="CancelClick" Width="80" Margin="5"></Button>
-            <Button Content="logout" Click="LogoutClick" Width="80" Margin="5"></Button>
-        </StackPanel>
-        </StackPanel>
-    </Grid>
+            <Button Content="refresh" Click="RefreshClick"  Style="{StaticResource btnStyle}"></Button>
+            <Button Content="cancel" Click="CancelClick"  Style="{StaticResource btnStyle}"></Button>
+            <Button Content="logout" Click="LogoutClick"  Style="{StaticResource btnStyle}"></Button>
+        </ListBox>
+        
+            <ListView DockPanel.Dock="right" ItemsSource="{Binding m_confs}"  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="property" CellTemplate="{StaticResource confName}"/>
+                        <GridViewColumn Header="value" CellTemplate="{StaticResource confValue}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            
+       
+    </DockPanel>
 </UserControl>

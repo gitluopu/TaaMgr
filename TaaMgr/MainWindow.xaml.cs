@@ -38,6 +38,10 @@ namespace TaaMgr
             m_txtKafkaLog.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
 
             this.Closed += (sender, e) => {
+                if(m_sshLoginCtl.Visibility!=Visibility.Visible)
+                {
+                    m_confCtl.LogoutClick(sender,new RoutedEventArgs());
+                }
                 Configuration cf = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
                 cf.AppSettings.Settings["consumerBroker"].Value = m_consumerCtl.m_broker;
                 cf.AppSettings.Settings["consumerTopic"].Value = m_consumerCtl.m_topic;
@@ -60,7 +64,7 @@ namespace TaaMgr
             //
             //cfa.AppSettings.Settings["NAME"].Value = "WANGLICHAO";
         }
-        private void SShLoginOnLogin(object sender, RoutedEventArgs e)
+        private void SShOnLogin(object sender, RoutedEventArgs e)
         {
             Task.Run(() => {
                 m_sshLoginCtl.Dispatcher.Invoke(() => { m_sshLoginCtl.Visibility = Visibility.Collapsed; });
@@ -71,41 +75,26 @@ namespace TaaMgr
                 cf.AppSettings.Settings["sshPasswd"].Value = m_sshLoginCtl.m_passwd;
                 cf.Save();
             });
+            m_confCtl.m_taaIp = m_sshLoginCtl.m_ip;
+            m_confCtl.m_icmd = new TaaCmdUnix(new Glue.SShCmd(m_sshLoginCtl.m_ssh, m_sshLoginCtl.m_scp));
+            m_sshLoginCtl.Login(sender, e);
+            m_confCtl.Login(sender, e);
+
         }
-        private void SShLoginOnDisconnect(object sender, RoutedEventArgs e)
+        private void SShOnLogout(object sender, RoutedEventArgs e)
         {
-            m_confCtl.Visibility = Visibility.Hidden;
+            m_confCtl.Visibility = Visibility.Collapsed;
+            m_sshLoginCtl.Visibility = Visibility.Visible;
+            m_confCtl.Logout(sender, e);
+            m_sshLoginCtl.Logout(sender, e);
         }
-        private void TaaConfIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (m_confCtl.Visibility==Visibility.Visible)
-            {
-                m_confCtl.m_icmd = new TaaCmdUnix(new Glue.SShCmd(m_sshLoginCtl.m_ssh,m_sshLoginCtl.m_scp));
-                m_confCtl.InitData();
-            }
-            else
-            {
-                m_confCtl.m_icmd = null;
-            }
-        }
+       
         private void TaaConfOnLogout(object sender, RoutedEventArgs e)
         {
             m_confCtl.Visibility = Visibility.Collapsed;
             m_sshLoginCtl.Visibility = Visibility.Visible;
+            m_confCtl.Logout(sender,e);
             m_sshLoginCtl.Logout(sender,e);
-        }
-        
-        private void TaaCmdIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            //if (m_taaCmdCtl.Visibility == Visibility.Visible)
-            //{
-            //    //m_confCtl.m_icmd = new TaaCmdUnix(new Glue.SShCmd(m_sshLoginCtl.m_ssh, m_sshLoginCtl.m_scp));
-            //    //m_confCtl.InitData();
-            //}
-            //else
-            //{
-            //    //m_confCtl.m_icmd = null;
-            //}
         }
         
         private void OnConsumerLoaded(object sender, RoutedEventArgs e)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,66 +26,102 @@ namespace KafkaCtl
         public ProducerCtl()
         {
             InitializeComponent();
+            m_btnStop.IsEnabled = false;
             DataContext = this;
         }
-        private  void ProduceClick(object sender, RoutedEventArgs arg)
+        private async void ProduceClick(object sender, RoutedEventArgs arg)
         {
             m_btnProduce.IsEnabled = false;
-            bStop = false;
-            
-            Task.Run(() =>
+            m_btnStop.IsEnabled = true;
+            int cntMax = int.Parse(m_cnt);
+            int interval = int.Parse(m_interval);
+            string ip;
+            string port;
+            string broker;
+            if (m_broker.Contains(":"))
             {
-                string broker;
-                int cntMax = int.Parse(m_cnt);
-                int interval = int.Parse(m_interval);
-                if (m_broker.Contains(":"))
+                string[] ary = m_broker.Split(':');
+                ip = ary[0];
+                port = ary[1];
+                broker = m_broker;
+            }
+            else
+            {
+                ip = m_broker;
+                port = "9092";
+                broker = ip + ":" + port;
+            }
+            using (var tcpClient = new TcpClient())
+            {
+                try
                 {
-                    broker = m_broker;
+                    if (!tcpClient.ConnectAsync(ip, int.Parse(port)).Wait(3000))
+                    {
+                        throw new Exception("connect to " + ip + ":" + port + " timeout within 3000ms");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    broker = m_broker + ":9092";
+                    string msg = ex.Message;
+                    if (ex.InnerException != null)
+                    {
+                        msg += ex.Message;
+                    }
+                    m_btnProduce.IsEnabled = true;
+                    m_btnStop.IsEnabled = false;
+                    MessageBox.Show(msg);
+                    return;
                 }
-                var config = new ProducerConfig { BootstrapServers = broker,
-                    SocketTimeoutMs = 3000,
-                    MessageTimeoutMs =3000,
-                    TransactionTimeoutMs = 3000,
-                };
 
-                // If serializers are not specified, default serializers from
-                // `Confluent.Kafka.Serializers` will be automatically used where
-                // available. Note: by default strings are encoded as UTF8.
-                using (var p = new ProducerBuilder<Null, string>(config).Build())
+
+                tcpClient.Close();
+            }
+            if (m_broker.Contains(":"))
+            {
+                broker = m_broker;
+            }
+            else
+            {
+                broker = m_broker + ":9092";
+            }
+            var config = new ProducerConfig
+            {
+                BootstrapServers = broker,
+                MessageTimeoutMs = 3000,
+            };
+
+            // If serializers are not specified, default serializers from
+            // `Confluent.Kafka.Serializers` will be automatically used where
+            // available. Note: by default strings are encoded as UTF8.
+            using (var p = new ProducerBuilder<Null, string>(config).Build())
+            {
+
+                int cnt = 0;
+                while (cnt < cntMax)
                 {
                     try
                     {
-                        int cnt = 0;
-                            while(bStop==false)
-                            { 
-                                p.Produce(m_topic, new Message<Null, string> { Value = m_msg });
-                            cnt++;
-                            if(cnt>=cntMax)
-                            {
-                                break;
-                            }
-                                Thread.Sleep(interval);
-                            }
-                        OnProduceCompleted?.Invoke(this,"send "+ cnt + " times successfully");
-
-
+                        var res = await p.ProduceAsync(m_topic, new Message<Null, string> { Value = m_msg });
+                        OnProduceCompleted?.Invoke(this, res.Message.ToString());
+                        cnt++;
                     }
                     catch (ProduceException<Null, string> e)
                     {
                         MessageBox.Show(e.Message);
+                        break;
                     }
+                    Thread.Sleep(interval);
                 }
-                m_btnProduce.Dispatcher.Invoke(()=> { m_btnProduce.IsEnabled = true; });
-                
-            });
+                OnProduceCompleted?.Invoke(this, "send " + cnt + " times");
+
+            }
+            m_btnProduce.Dispatcher.Invoke(() => { m_btnProduce.IsEnabled = true; });
+            m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = true; });
         }
         private void StopClick(object sender, RoutedEventArgs arg)
         {
             m_btnProduce.IsEnabled = true;
+            m_btnStop.IsEnabled = false;
             bStop = true;
         }
         private bool bStop;
@@ -133,7 +170,7 @@ namespace KafkaCtl
                 OnPropertyChanged("m_cnt");
             }
         }
-       
+
 
         private string _m_interval;
 

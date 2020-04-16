@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaCtl", "KafkaCtl\KafkaC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CmdLib", "CmdLib\CmdLib.csproj", "{3D76FC2A-6FAC-46A0-B69E-4557B713D667}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PPs", "..\PPs\PPs.csproj", "{9A355E13-EC75-4142-AFEE-580D9A0B09AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{3D76FC2A-6FAC-46A0-B69E-4557B713D667}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D76FC2A-6FAC-46A0-B69E-4557B713D667}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D76FC2A-6FAC-46A0-B69E-4557B713D667}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A355E13-EC75-4142-AFEE-580D9A0B09AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A355E13-EC75-4142-AFEE-580D9A0B09AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A355E13-EC75-4142-AFEE-580D9A0B09AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A355E13-EC75-4142-AFEE-580D9A0B09AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
