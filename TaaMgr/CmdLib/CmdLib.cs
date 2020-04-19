@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows;
+
 namespace CmdLib
 {
     public interface ICmnCmd
@@ -22,6 +24,11 @@ namespace CmdLib
         string GetSave2File();
         void SetBroker(string broker);
         void SetSave2File(string broker);
+        string GetNwPushIntval();
+        void SetNwPushIntval(string interval);
+        string GetAutoDrop();
+        void SetAutoDrop(string min);
+
     }
     public class TaaCmdUnix : ITaaCmd
     {
@@ -54,39 +61,22 @@ namespace CmdLib
 
         private string GetProperty(string path, JsonPropReader reader)
         {
-            try
+            using (StreamReader sr = new StreamReader(path))
             {
-                using (StreamReader sr = new StreamReader(path))
-                {
-                    string content = sr.ReadToEnd();
-                    return reader(content);
+                string content = sr.ReadToEnd();
+                return reader(content);
+            }
 
-                }
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
         }
         private void SetProperty(string path, JsonProperEditor editor)
-
         {
-            try
-            {
-
-                StreamReader sr = new StreamReader(path);
-                string content = sr.ReadToEnd();
-                string newContent = editor(content);
-                sr.Close();
-                StreamWriter sw = new StreamWriter(path);
-                sw.Write(newContent);
-                sw.Close();
-
-            }
-            catch (Exception ex)
-            {
-                //what to do
-            }
+            StreamReader sr = new StreamReader(path);
+            string content = sr.ReadToEnd();
+            string newContent = editor(content);
+            sr.Close();
+            StreamWriter sw = new StreamWriter(path);
+            sw.Write(newContent);
+            sw.Close();
         }
         public string GetBroker()
         {
@@ -103,30 +93,54 @@ namespace CmdLib
             HashSet<string> ret = new HashSet<string>();
             foreach (var path in policies)
             {
-                string str = GetProperty(path, (src) =>
+
+                try
+                {
+                    string str = GetProperty(path, (src) =>
                 {
                     var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
                     return obj.Config.Consumerconfig.Brokers;
                 });
-                ret.Add(str);
+                    ret.Add(str);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+
             }
             foreach (var path in policies)
             {
-                string str = GetProperty(path, (src) =>
+                try
                 {
-                    var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
-                    return obj.Config.Producerconfig.Brokers;
-                });
-                ret.Add(str);
+                    string str = GetProperty(path, (src) =>
+                    {
+                        var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
+                        return obj.Config.Producerconfig.Brokers;
+                    });
+                    ret.Add(str);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+
             }
             foreach (var path in strategies)
             {
-                string str = GetProperty(path, (src) =>
+                try
                 {
-                    var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
-                    return obj.Config.Brokers;
-                });
-                ret.Add(str);
+                    string str = GetProperty(path, (src) =>
+                    {
+                        var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
+                        return obj.Config.Brokers;
+                    });
+                    ret.Add(str);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
             string retStr = "";
             foreach (var ele in ret)
@@ -154,47 +168,176 @@ namespace CmdLib
             };
             foreach (var path in policies)
             {
-                SetProperty(path, (src) =>
+                try
                 {
-                    var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
-                    obj.Config.Consumerconfig.Brokers = broker;
-                    obj.Config.Producerconfig.Brokers = broker;
-                    return Confs.PolicyPlugin.Serialize.ToJson(obj);
-                });
+                    SetProperty(path, (src) =>
+                    {
+                        var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
+                        obj.Config.Consumerconfig.Brokers = broker;
+                        obj.Config.Producerconfig.Brokers = broker;
+                        return Confs.PolicyPlugin.Serialize.ToJson(obj);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
-           
+
             foreach (var path in strategies)
             {
-                string str = GetProperty(path, (src) =>
+                try
                 {
-                    var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
-                    obj.Config.Brokers = broker;
-                    return Confs.StrategyPatternKafkaProducer.Serialize.ToJson(obj);
-                });
+                    string str = GetProperty(path, (src) =>
+                    {
+                        var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
+                        obj.Config.Brokers = broker;
+                        return Confs.StrategyPatternKafkaProducer.Serialize.ToJson(obj);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
-            
+
         }
         public string GetSave2File()
         {
             string path = Common.Dir.GetCacheDir() + @"svrplugin/Child/StrategyPatternPlugin.svrplugin";
-
-            string str = GetProperty(path, (src) =>
+            string str = "";
+            try
             {
-                var obj = Confs.StrategyPatternPlugin.CStrategyPatternPlugin.FromJson(src);
-                return obj.Config.IsNeedSaveFile.ToString();
-            });
+                str = GetProperty(path, (src) =>
+                {
+                    var obj = Confs.StrategyPatternPlugin.CStrategyPatternPlugin.FromJson(src);
+                    return obj.Config.IsNeedSaveFile.ToString();
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
             return str;
         }
         public void SetSave2File(string s)
         {
             string path = Common.Dir.GetCacheDir() + @"svrplugin/Child/StrategyPatternPlugin.svrplugin";
-
-            SetProperty(path, (src) =>
+            try
             {
-                var obj = Confs.StrategyPatternPlugin.CStrategyPatternPlugin.FromJson(src);
-                obj.Config.IsNeedSaveFile = long.Parse(s);
-                return Confs.StrategyPatternPlugin.Serialize.ToJson(obj);
+                SetProperty(path, (src) =>
+                {
+                    var obj = Confs.StrategyPatternPlugin.CStrategyPatternPlugin.FromJson(src);
+                    obj.Config.IsNeedSaveFile = long.Parse(s);
+                    return Confs.StrategyPatternPlugin.Serialize.ToJson(obj);
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        public string GetNwPushIntval()
+        {
+            string nw = Common.Dir.GetCacheDir() + @"svrplugin/Child/NetworkAnalysis.svrplugin";
+            string fmeNw = Common.Dir.GetCacheDir() + @"svrplugin/Main/FmeNetworkAnalysis.svrplugin";
+            string nwInterval = "";
+            string fmeInterval = "";
+            try
+            {
+                nwInterval = GetProperty(nw, (src) =>
+                {
+                    string dst;
+                    var obj = Confs.NetworkAnalysis.CNetworkAnalysis.FromJson(src);
+                    dst = obj.Config.Pushinterval.ToString();
+                    return dst;
+                });
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            try
+            {
+                fmeInterval = GetProperty(fmeNw, (src) =>
+          {
+              string dst;
+              var obj = Confs.FmeNetworkAnalysis.CFmeNetworkAnalysis.FromJson(src);
+              dst = obj.Config.Pushinterval.ToString();
+              return dst;
+          });
+            }
+            catch { }
+            if (nwInterval != fmeInterval && fmeInterval != "")
+            {
+                MessageBox.Show("NetworkAnalysis and FmeNetworkAnalysis pushInterval are different,we select NetworkAnalysis");
+            }
+
+            return nwInterval;
+        }
+        public void SetNwPushIntval(string interval)
+        {
+            string nw = Common.Dir.GetCacheDir() + @"svrplugin/Child/NetworkAnalysis.svrplugin";
+            string fmeNw = Common.Dir.GetCacheDir() + @"svrplugin/Main/FmeNetworkAnalysis.svrplugin";
+            try
+            {
+                SetProperty(nw, (src) =>
+                {
+                    string dst;
+                    var obj = Confs.NetworkAnalysis.CNetworkAnalysis.FromJson(src);
+                    obj.Config.Pushinterval = long.Parse(interval);
+                    dst = Confs.NetworkAnalysis.Serialize.ToJson(obj);
+                    return dst;
+                });
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            try
+            {
+                SetProperty(fmeNw, (src) =>
+                {
+                    string dst;
+                    var obj = Confs.FmeNetworkAnalysis.CFmeNetworkAnalysis.FromJson(src);
+                    obj.Config.Pushinterval = long.Parse(interval);
+                    dst = Confs.FmeNetworkAnalysis.Serialize.ToJson(obj);
+                    return dst;
+                });
+            }
+            catch { }
+        }
+
+        public string GetAutoDrop()
+        {
+            string path = Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin";
+            string min = "";
+            try
+            {
+                min = GetProperty(path, (src) =>
+            {
+                string dst;
+                var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
+                dst = obj.Config.MaxDelayMin.ToString();
+                return dst;
             });
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            return min;
+        }
+        public void SetAutoDrop(string min)
+        {
+            string path = Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin";
+            try
+            {
+                SetProperty(path, (src) =>
+                {
+                    string dst;
+                    var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
+                    obj.Config.MaxDelayMin = long.Parse(min);
+                    dst = Confs.LocalRedisClient.Serialize.ToJson(obj);
+                    return dst;
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         private ICmnCmd m_icmd;
     }
