@@ -13,11 +13,14 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="topic" Width="60" Margin="5"></TextBlock>
-            <TextBox Text="{Binding m_topic}" Width="100" Margin="5"></TextBox>
+            <ComboBox Text="{Binding m_topic}" ItemsSource="{Binding m_liTopics}" IsEditable="True" Width="100" Margin="5"></ComboBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="cnt" Width="60" Margin="5"></TextBlock>
             <TextBox Text="{Binding m_cnt}" Width="100" Margin="5"></TextBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <CheckBox Content="save2file" IsChecked="{Binding m_save2File}"></CheckBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal">
             <Button Content="consume" x:Name="m_btnConsume" Click="ConsumeClick" Width="80" Margin="5"></Button>

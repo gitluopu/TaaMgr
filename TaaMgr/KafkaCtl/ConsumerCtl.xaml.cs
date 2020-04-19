@@ -18,6 +18,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Confluent.Kafka;
 using Common;
+using System.IO;
+
 namespace KafkaCtl
 {
     /// <summary>
@@ -25,6 +27,7 @@ namespace KafkaCtl
     /// </summary>
     public partial class ConsumerCtl : UserControl, INotifyPropertyChanged
     {
+        public List<string> m_liTopics { get; set; }
         public ConsumerCtl()
         {
             if(AppConfig.m_conf.AppSettings.Settings["consumer.broker"]==null)
@@ -36,8 +39,15 @@ namespace KafkaCtl
             InitializeComponent();
             m_btnConsume.IsEnabled = true;
             m_btnStop.IsEnabled = false;
-            DataContext = this;
+            m_liTopics = new List<string>();
+            m_liTopics.Add("audit");
+            m_liTopics.Add("alert");
+            m_liTopics.Add("traffic");
+            m_liTopics.Add("event");
+            m_liTopics.Add("PushResponse");
             
+            DataContext = this;
+            m_save2File = false;
         }
         
         private void ConsumeClick(object sender, RoutedEventArgs arg)
@@ -47,6 +57,7 @@ namespace KafkaCtl
             string ip;
             string port;
             string broker;
+            
             if (m_broker.Contains(":"))
             {
                 string[] ary = m_broker.Split(':');
@@ -87,7 +98,8 @@ namespace KafkaCtl
 
                 UInt32 cntMax = UInt32.Parse(m_cnt);
                 m_cts = new CancellationTokenSource();
-
+                StreamWriter writer =  new StreamWriter(Common.Dir.GetCacheDir() + ip + "-" + m_topic + ".log"); ;
+               
                 var conf = new ConsumerConfig
                 {
                     GroupId = "test-consumer-group",
@@ -118,6 +130,10 @@ namespace KafkaCtl
                             try
                             {
                                 var cr = c.Consume(m_cts.Token);
+                                if(m_save2File)
+                                {
+                                    writer.Write(cr.Message.Value+System.Environment.NewLine);
+                                }
                                 OnConsumeMsg?.Invoke(this, cr.Message.Value);
                                 cnt++;
                                 if (cntMax != 0)
@@ -146,6 +162,9 @@ namespace KafkaCtl
                         //return;
                     }
                 }
+               
+                    writer.Close();
+               
                 m_btnConsume.Dispatcher.Invoke(() => { m_btnConsume.IsEnabled = true; });
                 m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = false; });
             });
@@ -184,6 +203,16 @@ namespace KafkaCtl
             {
                 AppConfig.m_conf.AppSettings.Settings["consumer.cnt"].Value = value;
                 OnPropertyChanged("m_cnt");
+            }
+        }
+
+        private bool _m_save2File;
+
+        public bool m_save2File
+        {
+            get { return _m_save2File; }
+            set { _m_save2File = value;
+                OnPropertyChanged("m_save2File");
             }
         }
 
