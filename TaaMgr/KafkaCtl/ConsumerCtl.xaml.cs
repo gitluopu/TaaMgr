@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -16,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Confluent.Kafka;
+using Common;
 namespace KafkaCtl
 {
     /// <summary>
@@ -25,12 +27,19 @@ namespace KafkaCtl
     {
         public ConsumerCtl()
         {
+            if(AppConfig.m_conf.AppSettings.Settings["consumer.broker"]==null)
+                AppConfig.m_conf.AppSettings.Settings.Add("consumer.broker", "172.16.2.82");
+            if (AppConfig.m_conf.AppSettings.Settings["consumer.topic"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("consumer.topic", "audit");
+            if (AppConfig.m_conf.AppSettings.Settings["consumer.cnt"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("consumer.cnt", "20");
             InitializeComponent();
             m_btnConsume.IsEnabled = true;
             m_btnStop.IsEnabled = false;
             DataContext = this;
+            
         }
-
+        
         private void ConsumeClick(object sender, RoutedEventArgs arg)
         {
             m_btnConsume.IsEnabled = false;
@@ -83,7 +92,7 @@ namespace KafkaCtl
                 {
                     GroupId = "test-consumer-group",
 
-                    BootstrapServers = m_broker,
+                    BootstrapServers = ip + ":" + port,
                     //SocketTimeoutMs = 1000,
                     //SessionTimeoutMs = 1000,
                     //MetadataRequestTimeoutMs=1000,
@@ -144,41 +153,36 @@ namespace KafkaCtl
         private void StopClick(object sender, RoutedEventArgs arg)
         {
             m_cts.Cancel();
-            m_cts.Dispose();
             m_btnConsume.IsEnabled = true;
             m_btnStop.IsEnabled = false;
         }
-        private string _m_broker;
 
         public string m_broker
         {
-            get { return _m_broker; }
+            get { return AppConfig.m_conf.AppSettings.Settings["consumer.broker"].Value; }
             set
             {
-                _m_broker = value;
+                AppConfig.m_conf.AppSettings.Settings["consumer.broker"].Value = value;
                 OnPropertyChanged("m_broker");
             }
         }
-        private string _m_topic;
 
         public string m_topic
         {
-            get { return _m_topic; }
+            get { return AppConfig.m_conf.AppSettings.Settings["consumer.topic"].Value; }
             set
             {
-                _m_topic = value;
+                AppConfig.m_conf.AppSettings.Settings["consumer.topic"].Value = value;
                 OnPropertyChanged("m_topic");
             }
         }
 
-        private string _m_cnt;
-
         public string m_cnt
         {
-            get { return _m_cnt; }
+            get { return AppConfig.m_conf.AppSettings.Settings["consumer.cnt"].Value; }
             set
             {
-                _m_cnt = value;
+                AppConfig.m_conf.AppSettings.Settings["consumer.cnt"].Value = value;
                 OnPropertyChanged("m_cnt");
             }
         }

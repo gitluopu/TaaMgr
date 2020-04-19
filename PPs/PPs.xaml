@@ -4,9 +4,49 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:PPs"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="bvc"></BooleanToVisibilityConverter>
+    </UserControl.Resources>
     <Grid>
-            
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <CheckBox IsChecked="{Binding m_ppsVisible}">
+                pps
+            </CheckBox>
+            <CheckBox IsChecked="{Binding m_bpsVisible}">
+                bps
+            </CheckBox>
+        </StackPanel>
+        <lvc:CartesianChart x:Name="m_chart" Grid.Row="1" Hoverable="False"  DataTooltip="{x:Null}">
+            <lvc:CartesianChart.Series>
+                <lvc:LineSeries Title="pps" x:Name="m_linePps" 
+                                Values="{Binding m_ppsY}" 
+                                Visibility="{Binding m_ppsVisible, Converter={StaticResource bvc}}" 
+                                ScalesYAt="0"/>
+                <lvc:LineSeries Title="bps" x:Name="m_lineBps"
+                               Values="{Binding m_bpsY}"
+                                Visibility="{Binding m_bpsVisible, Converter={StaticResource bvc}}"
+                                ScalesYAt="1"/>
+            </lvc:CartesianChart.Series>
+            <lvc:CartesianChart.AxisX>
+                <lvc:Axis x:Name="m_X"
+                    MaxValue="{Binding m_xMax}" 
+                          MinValue="{Binding m_xMin}">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator Step="5"></lvc:Separator>
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
+            </lvc:CartesianChart.AxisX>
+            <lvc:CartesianChart.AxisY>
+                <lvc:Axis Foreground="DodgerBlue" Title="pps"/>
+                <lvc:Axis Foreground="IndianRed" Title="bps" Position="RightTop"/>
+            </lvc:CartesianChart.AxisY>
+        </lvc:CartesianChart>
     </Grid>
 </UserControl>

@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Renci.SshNet;
+using Common;
 namespace SshLogin
 {
     /// <summary>
@@ -24,8 +25,15 @@ namespace SshLogin
     {
         public SShLoginCtl()
         {
+            if (AppConfig.m_conf.AppSettings.Settings["sshlogin.ip"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("sshlogin.ip", "172.16.2.82");
+            if (AppConfig.m_conf.AppSettings.Settings["sshlogin.user"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("sshlogin.user", "root");
+            if (AppConfig.m_conf.AppSettings.Settings["sshlogin.passwd"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("sshlogin.passwd", "Silvers$R7!");
             InitializeComponent();
             DataContext = this;
+            Loaded += (s,arg) => m_pwBox.Password = m_passwd;
         }
 
         
@@ -55,15 +63,6 @@ namespace SshLogin
                     m_btnLogin.Dispatcher.Invoke(() => { m_btnLogin.IsEnabled = true; });
                     return;
                 }
-                //if(m_user!="root") //try to login as root
-                //{
-                //    IDictionary<Renci.SshNet.Common.TerminalModes, uint> termkvp = new Dictionary<Renci.SshNet.Common.TerminalModes, uint>();
-                //    termkvp.Add(Renci.SshNet.Common.TerminalModes.ECHO, 53);
-                //    ShellStream shellStream = m_ssh.CreateShellStream("xterm", 80, 24, 800, 600, 1024, termkvp);
-                //    shellStream.WriteLine("su root");
-                //    shellStream.Expect("Password:");
-                //    shellStream.WriteLine("Silvers$R7!");
-                //}
                 OnLogin?.Invoke(this, arg);
             });
         }
@@ -79,31 +78,38 @@ namespace SshLogin
         }
         public SshClient m_ssh { get; private set; }
         public ScpClient m_scp { get; private set; }
-        private string _m_ip;
+
 
         public string m_ip
         {
-            get { return _m_ip; }
+            get { return AppConfig.m_conf.AppSettings.Settings["sshlogin.ip"].Value; }
             set
             {
-                _m_ip = value;
+                AppConfig.m_conf.AppSettings.Settings["sshlogin.ip"].Value = value;
                 OnPropertyChanged("m_ip");
             }
         }
 
-        private string _m_user;
-
+        
         public string m_user
         {
-            get { return _m_user; }
+            get { return AppConfig.m_conf.AppSettings.Settings["sshlogin.user"].Value; }
             set
             {
-                _m_user = value;
+                AppConfig.m_conf.AppSettings.Settings["sshlogin.user"].Value = value;
                 OnPropertyChanged("m_user");
             }
         }
-
-        public string m_passwd { get; set; }
+        public string m_passwd
+        {
+            get { return AppConfig.m_conf.AppSettings.Settings["sshlogin.passwd"].Value; }
+            set
+            {
+                AppConfig.m_conf.AppSettings.Settings["sshlogin.passwd"].Value = value;
+                //OnPropertyChanged("m_passwd");
+            }
+        }
+        
         public event RoutedEventHandler OnLogin;
         public event RoutedEventHandler OnLogout;
         public event PropertyChangedEventHandler PropertyChanged;

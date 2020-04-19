@@ -101,6 +101,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{6f68aef8-7083-4402-9f73-f77cc221fbec}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SshLogin\SShLogin.csproj">
       <Project>{BB62288D-01A6-418A-B556-C1713CAEEFB6}</Project>
       <Name>SShLogin</Name>
@@ -108,10 +112,6 @@
     <ProjectReference Include="CmdLib\CmdLib.csproj">
       <Project>{3d76fc2a-6fac-46a0-b69e-4557b713d667}</Project>
       <Name>CmdLib</Name>
-    </ProjectReference>
-    <ProjectReference Include="Common\Common.csproj">
-      <Project>{389afe80-9fb3-4469-bed9-5989de40a1a9}</Project>
-      <Name>Common</Name>
     </ProjectReference>
     <ProjectReference Include="KafkaCtl\KafkaCtl.csproj">
       <Project>{31B19963-CEB6-4823-A80E-97B57BBAF930}</Project>

@@ -11,7 +11,7 @@
         <TabControl>
             <TabItem Header="taa">
                 <Grid>
-                <SshLogin:SShLoginCtl x:Name="m_sshLoginCtl" Loaded="SShLoginOnLoad" OnLogin="SShOnLogin" OnLogout="SShOnLogout"  HorizontalAlignment="Center" VerticalAlignment="center"/>
+                <SshLogin:SShLoginCtl x:Name="m_sshLoginCtl"  OnLogin="SShOnLogin" OnLogout="SShOnLogout"  HorizontalAlignment="Center" VerticalAlignment="center"/>
                 <TaaConf:TaaConfCtl x:Name="m_confCtl"  OnLogout="TaaConfOnLogout" />
                 </Grid>
             </TabItem>
@@ -22,8 +22,8 @@
                         <ColumnDefinition Width="80*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <KafkaCtl:ConsumerCtl x:Name="m_consumerCtl" OnConsumeMsg="OnConsumeMsg" Loaded="OnConsumerLoaded"/>
-                        <KafkaCtl:ProducerCtl x:Name="m_producerCtl" OnProduceCompleted="OnProduceCompleted" Loaded="OnProducerLoaded" Margin="0,20,0,0"/>
+                        <KafkaCtl:ConsumerCtl x:Name="m_consumerCtl" OnConsumeMsg="OnConsumeMsg"/>
+                        <KafkaCtl:ProducerCtl x:Name="m_producerCtl" OnProduceCompleted="OnProduceCompleted" Margin="0,20,0,0"/>
                         <Button Content="clear" Click="ClearClick" Margin="0,10,0,0" Height="20"/>
                     </StackPanel>
                     <TextBox x:Name="m_txtKafkaLog" Grid.Column="1"/>

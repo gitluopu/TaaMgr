@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Confluent.Kafka;
+using Common;
 namespace KafkaCtl
 {
     /// <summary>
@@ -25,6 +26,16 @@ namespace KafkaCtl
     {
         public ProducerCtl()
         {
+            if (AppConfig.m_conf.AppSettings.Settings["producer.broker"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("producer.broker", "172.16.2.82");
+            if (AppConfig.m_conf.AppSettings.Settings["producer.topic"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("producer.topic", "audit");
+            if (AppConfig.m_conf.AppSettings.Settings["producer.cnt"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("producer.cnt", "20");
+            if (AppConfig.m_conf.AppSettings.Settings["producer.msg"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("producer.msg", "test");
+            if (AppConfig.m_conf.AppSettings.Settings["producer.interval"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("producer.interval", "1000");
             InitializeComponent();
             m_btnStop.IsEnabled = false;
             DataContext = this;
@@ -76,17 +87,10 @@ namespace KafkaCtl
 
                 tcpClient.Close();
             }
-            if (m_broker.Contains(":"))
-            {
-                broker = m_broker;
-            }
-            else
-            {
-                broker = m_broker + ":9092";
-            }
+           
             var config = new ProducerConfig
             {
-                BootstrapServers = broker,
+                BootstrapServers = ip+":"+port,
                 MessageTimeoutMs = 3000,
             };
 
@@ -124,15 +128,15 @@ namespace KafkaCtl
             m_btnStop.IsEnabled = false;
             bStop = true;
         }
+
         private bool bStop;
-        private string _m_broker;
 
         public string m_broker
         {
-            get { return _m_broker; }
+            get { return AppConfig.m_conf.AppSettings.Settings["producer.broker"].Value; }
             set
             {
-                _m_broker = value;
+                AppConfig.m_conf.AppSettings.Settings["producer.broker"].Value = value;
                 OnPropertyChanged("m_broker");
             }
         }
@@ -140,46 +144,40 @@ namespace KafkaCtl
 
         public string m_topic
         {
-            get { return _m_topic; }
+            get { return AppConfig.m_conf.AppSettings.Settings["producer.topic"].Value; }
             set
             {
-                _m_topic = value;
+                AppConfig.m_conf.AppSettings.Settings["producer.topic"].Value = value;
                 OnPropertyChanged("m_topic");
             }
         }
 
-        private string _m_msg;
 
         public string m_msg
         {
-            get { return _m_msg; }
+            get { return AppConfig.m_conf.AppSettings.Settings["producer.msg"].Value; }
             set
             {
-                _m_msg = value;
+                AppConfig.m_conf.AppSettings.Settings["producer.msg"].Value = value;
                 OnPropertyChanged("m_msg");
             }
         }
-        private string _m_cnt;
 
         public string m_cnt
         {
-            get { return _m_cnt; }
+            get { return AppConfig.m_conf.AppSettings.Settings["producer.cnt"].Value; }
             set
             {
-                _m_cnt = value;
+                AppConfig.m_conf.AppSettings.Settings["producer.cnt"].Value = value;
                 OnPropertyChanged("m_cnt");
             }
         }
-
-
-        private string _m_interval;
-
         public string m_interval
         {
-            get { return _m_interval; }
+            get { return AppConfig.m_conf.AppSettings.Settings["producer.interval"].Value; }
             set
             {
-                _m_interval = value;
+                AppConfig.m_conf.AppSettings.Settings["producer.interval"].Value = value;
                 OnPropertyChanged("m_interval");
             }
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using CmdLib;
+using Confluent.Kafka;
+using PPs;
 namespace TaaConf
 {
     /// <summary>
@@ -31,7 +34,7 @@ namespace TaaConf
             m_confs.Add(new ConfItem("broker", () => { return m_icmd.GetBroker(); }, (str) => { m_icmd.SetBroker(str); }));
             m_confs.Add(new ConfItem("save2file", () => { return m_icmd.GetSave2File(); }, (str) => { m_icmd.SetSave2File(str); }));
             DataContext = this;
-            
+
         }
 
         public void PollTaaStatus()
@@ -40,95 +43,96 @@ namespace TaaConf
             m_statusTask = Task.Run(() =>
             {
                 var ct = m_tokenSource.Token;
-                try { 
-                while (true)
+                try
                 {
-                    if (ct.IsCancellationRequested)
+                    while (true)
                     {
+                        if (ct.IsCancellationRequested)
+                        {
 
-                        ct.ThrowIfCancellationRequested();
-                    }
-                    string status;
-                    try
-                    {
-                        status = this.m_icmd.GetCmnCmd().RunCommand("ps ajx | grep taa|grep -v grep");
-                    }
-                    catch (Exception ex)
-                    {
+                            ct.ThrowIfCancellationRequested();
+                        }
+                        string status;
+                        try
+                        {
+                            status = this.m_icmd.GetCmnCmd().RunCommand("ps ajx | grep taa|grep -v grep");
+                        }
+                        catch (Exception ex)
+                        {
                             MessageBox.Show(ex.Message);
                             throw ex;
-                    }
-                    int childTaa = 0;
-                    int mainTaa = 0;
-                    int dumpCap = 0;
-                    HashSet<string> infs = new HashSet<string>();
-                    using (StringReader sr = new StringReader(status))
-                    {
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
+                        }
+                        int childTaa = 0;
+                        int mainTaa = 0;
+                        int dumpCap = 0;
+                        HashSet<string> infs = new HashSet<string>();
+                        using (StringReader sr = new StringReader(status))
                         {
-                            if (line.Contains("/bin/TAA -C"))
+                            string line;
+                            while ((line = sr.ReadLine()) != null)
                             {
-                                childTaa++;
-                            }
-                            else if (line.Contains("/bin/TAA"))
-                            {
-                                mainTaa++;
-                            }
-                            else if (line.Contains("bin/dumpcap"))
-                            {
-                                dumpCap++;
-                                string[] ary = line.Split(' ');
-                                int len = ary.Length;
-                                for (int i = 0; i < len; i++)
+                                if (line.Contains("/bin/TAA -C"))
                                 {
-                                    if (ary[i] == "-i")
+                                    childTaa++;
+                                }
+                                else if (line.Contains("/bin/TAA"))
+                                {
+                                    mainTaa++;
+                                }
+                                else if (line.Contains("bin/dumpcap"))
+                                {
+                                    dumpCap++;
+                                    string[] ary = line.Split(' ');
+                                    int len = ary.Length;
+                                    for (int i = 0; i < len; i++)
                                     {
-                                        if ((i + 1) < len)
+                                        if (ary[i] == "-i")
                                         {
-                                            infs.Add(ary[i + 1]);
+                                            if ((i + 1) < len)
+                                            {
+                                                infs.Add(ary[i + 1]);
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                    } //end stringReader
-                    string _status = "";
-                    string _infs = "";
-                    if (mainTaa != 0 && childTaa != 0 && infs.Count != 0) //running
-                    {
-                        _status = "running";
-                        foreach (var ele in infs)
+                        } //end stringReader
+                        string _status = "";
+                        string _infs = "";
+                        if (mainTaa != 0 && childTaa != 0 && infs.Count != 0) //running
                         {
-                            if (_infs.Length > 0)
+                            _status = "running";
+                            foreach (var ele in infs)
                             {
-                                _infs += ",";
+                                if (_infs.Length > 0)
+                                {
+                                    _infs += ",";
+                                }
+                                _infs += ele;
                             }
-                            _infs += ele;
+                        }
+                        else if (mainTaa != 0) //unhealthy
+                        {
+                            _status = "unknown";
+                        }
+                        else
+                        {
+                            _status = "stop";
+                        }
+                        if (_status != m_taaStatus)
+                        {
+                            m_taaStatus = _status;
+                        }
+                        if (_infs != m_taaInfs)
+                        {
+                            m_taaInfs = _infs;
                         }
                     }
-                    else if (mainTaa != 0) //unhealthy
-                    {
-                        _status = "unknown";
-                    }
-                    else
-                    {
-                        _status = "stop";
-                    }
-                    if (_status != m_taaStatus)
-                    {
-                        m_taaStatus = _status;
-                    }
-                    if (_infs != m_taaInfs)
-                    {
-                        m_taaInfs = _infs;
-                    }
                 }
-                }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    
+
                     return;
                 }
             }, m_tokenSource.Token);
@@ -159,7 +163,7 @@ namespace TaaConf
             PollTaaStatus();
             InitData();
         }
-        public  void Logout(object sender, RoutedEventArgs e)
+        public void Logout(object sender, RoutedEventArgs e)
         {
             m_tokenSource.Cancel();
             m_tokenSource.Dispose();
@@ -271,6 +275,9 @@ namespace TaaConf
             get { return _m_taaIp; }
             set { _m_taaIp = value; OnPropertyChanged("m_taaIp"); }
         }
+
+
+
         private void TaaStartClick(object sender, RoutedEventArgs e)
         {
             m_icmd.GetCmnCmd().RunCommand("systemctl start in-sec-taa");
@@ -283,6 +290,147 @@ namespace TaaConf
         {
             m_icmd.GetCmnCmd().RunCommand("systemctl restart in-sec-taa");
         }
+        private bool Consume(string topic, CancellationTokenSource ct, EventHandler<string> msgHandler)
+        {
+            string ip;
+            string port;
+            string _broker = "";
+            foreach (var ele in m_confs)
+            {
+                if (ele.m_name == "broker")
+                {
+                    _broker = ele.m_value;
+                    break;
+                }
+            }
+            if (_broker.Length < 0)
+                return false;
+            if (_broker.Contains(":"))
+            {
+                string[] ary = _broker.Split(':');
+                ip = ary[0];
+                port = ary[1];
+            }
+            else
+            {
+                ip = _broker;
+                port = "9092";
+            }
+            if (ip == "127.0.0.1")
+            {
+                ip = m_taaIp;
+            }
+            using (var tcpClient = new TcpClient())
+            {
+                try
+                {
+                    if (!tcpClient.ConnectAsync(ip, int.Parse(port)).Wait(3000))
+                    {
+                        throw new Exception("connect to " + ip + ":" + port + " timeout within 3000ms");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string msg = ex.Message;
+                    if (ex.InnerException != null)
+                    {
+                        msg += ex.Message;
+                    }
+                    MessageBox.Show(msg);
+                    return false;
+                }
+            }
+            Task.Run(() =>
+            {
+                var conf = new ConsumerConfig
+                {
+                    GroupId = "test-consumer-group",
+                    BootstrapServers = ip + ":" + port,
+                    AutoOffsetReset = AutoOffsetReset.Earliest
+                };
+                using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+                {
+                    c.Subscribe(topic);
+                    try
+                    {
+                        while (true)
+                        {
+                            if (ct.IsCancellationRequested)
+                                ct.Token.ThrowIfCancellationRequested();
+                            try
+                            {
+                                var cr = c.Consume(ct.Token);
+                                msgHandler(this, cr.Message.Value);
+                                //Thread.Sleep(10);
+                            }
+                            catch (ConsumeException ex)
+                            {
+                                MessageBox.Show(ex.Error.Reason);
+                                throw new OperationCanceledException();
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        c.Close();
+                        ct.Dispose();
+                    }
+                }
+            });
+            return true;
+        }
+        private void TaaTrafficClick(object sender, RoutedEventArgs e)
+        {
+            var ct = new CancellationTokenSource();
+            var ppsCtl = new PPsCtl();
+            var win = new Window
+            {
+                Content = ppsCtl,
+            };
+            win.Closed += (s, arg) => { ct.Cancel(); };
+            bool okay = Consume("traffic", ct, (s, msg) =>
+            {
+                CmdLib.Confs.Traffic.CTraffic[] traffic;
+                try
+                {
+                    traffic = CmdLib.Confs.Traffic.CTraffic.FromJson(msg);
+                }
+                catch (Exception ex)
+                {
+                    throw new OperationCanceledException(ex.Message);
+                }
+                long pps = 0, bps = 0;
+
+                foreach (var ele in traffic)
+                {
+                    pps += ele.Pps;
+                    bps += ele.Bps;
+                }
+                ppsCtl.Add(new Tuple<long, long>(pps, bps));
+            });
+            if (okay)
+                win.Show();
+        }
+
+        private void TaaNetMapClick(object sender, RoutedEventArgs e)
+        {
+            var ct = new CancellationTokenSource();
+            var ppsCtl = new PPsCtl();
+            var win = new Window
+            {
+                Content = ppsCtl,
+            };
+            var netMap = new NetMapConsumer("5");
+            win.Closed += (s, arg) => { ct.Cancel(); netMap.Stop(); };
+            netMap.OnHandleMsgDone += (s, t) => { ppsCtl.Add(t); };
+            bool okay = Consume("netmap", ct, (s, msg) =>
+            {
+                netMap.HandleMsg(msg);
+            });
+            if (okay)
+                win.Show();
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)
