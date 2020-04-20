@@ -46,7 +46,6 @@ namespace TaaMgr
         {
             Task.Run(() =>
             {
-                m_sshLoginCtl.Visibility = Visibility.Collapsed;
                 m_sshLoginCtl.Dispatcher.Invoke(() => m_sshLoginCtl.Visibility = Visibility.Collapsed);
                 m_confCtl.Dispatcher.Invoke(() => m_confCtl.Visibility = Visibility.Visible);
                 m_confCtl.m_taaIp = m_sshLoginCtl.m_ip;

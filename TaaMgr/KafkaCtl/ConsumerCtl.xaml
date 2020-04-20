@@ -20,6 +20,10 @@
             <TextBox Text="{Binding m_cnt}" Width="100" Margin="5"></TextBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal">
+            <TextBlock Text="groupId" Width="60" Margin="5"></TextBlock>
+            <TextBox Text="{Binding m_groupId}" Width="100" Margin="5"></TextBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
             <CheckBox Content="save2file" IsChecked="{Binding m_save2File}"></CheckBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal">

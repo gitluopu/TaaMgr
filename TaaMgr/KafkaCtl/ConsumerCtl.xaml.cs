@@ -30,12 +30,14 @@ namespace KafkaCtl
         public List<string> m_liTopics { get; set; }
         public ConsumerCtl()
         {
-            if(AppConfig.m_conf.AppSettings.Settings["consumer.broker"]==null)
+            if (AppConfig.m_conf.AppSettings.Settings["consumer.broker"] == null)
                 AppConfig.m_conf.AppSettings.Settings.Add("consumer.broker", "172.16.2.82");
             if (AppConfig.m_conf.AppSettings.Settings["consumer.topic"] == null)
                 AppConfig.m_conf.AppSettings.Settings.Add("consumer.topic", "audit");
             if (AppConfig.m_conf.AppSettings.Settings["consumer.cnt"] == null)
                 AppConfig.m_conf.AppSettings.Settings.Add("consumer.cnt", "20");
+            if (AppConfig.m_conf.AppSettings.Settings["consumer.groupId"] == null)
+                AppConfig.m_conf.AppSettings.Settings.Add("consumer.groupId", "");
             InitializeComponent();
             m_btnConsume.IsEnabled = true;
             m_btnStop.IsEnabled = false;
@@ -45,11 +47,11 @@ namespace KafkaCtl
             m_liTopics.Add("traffic");
             m_liTopics.Add("event");
             m_liTopics.Add("PushResponse");
-            
+
             DataContext = this;
             m_save2File = false;
         }
-        
+
         private void ConsumeClick(object sender, RoutedEventArgs arg)
         {
             m_btnConsume.IsEnabled = false;
@@ -57,7 +59,7 @@ namespace KafkaCtl
             string ip;
             string port;
             string broker;
-            
+
             if (m_broker.Contains(":"))
             {
                 string[] ary = m_broker.Split(':');
@@ -71,45 +73,39 @@ namespace KafkaCtl
                 port = "9092";
                 broker = ip + ":" + port;
             }
-            using (var tcpClient = new TcpClient())
-            {
                 try
                 {
-                    if (!tcpClient.ConnectAsync(ip, int.Parse(port)).Wait(3000))
-                    {
-                        throw new Exception("connect to " + ip + ":" + port + " timeout within 3000ms");
-                    }
+                    Common.Net.TcpConnectionTest(ip,int.Parse(port),int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
                 }
                 catch (Exception ex)
                 {
-                    string msg = ex.Message;
-                    if (ex.InnerException != null)
-                    {
-                        msg += ex.Message;
-                    }
                     m_btnConsume.IsEnabled = true;
                     m_btnStop.IsEnabled = false;
-                    MessageBox.Show(msg);
+                    MessageBox.Show(ex.Message);
                     return;
                 }
-            }
-                Task.Run(() =>
+            Task.Run(() =>
+        {
+            UInt32 cntMax = UInt32.Parse(m_cnt);
+            m_cts = new CancellationTokenSource();
+            StreamWriter writer = null;
+            if (m_save2File)
+                writer = new StreamWriter(Common.Dir.GetCacheDir() + ip + "-" + m_topic + ".log");
+            string groupId = null;
+            if (m_groupId == "")
+                groupId = DateTime.Now.ToString();
+            else
+                groupId = m_groupId;
+            var conf = new ConsumerConfig
             {
-
-                UInt32 cntMax = UInt32.Parse(m_cnt);
-                m_cts = new CancellationTokenSource();
-                StreamWriter writer =  new StreamWriter(Common.Dir.GetCacheDir() + ip + "-" + m_topic + ".log"); ;
-               
-                var conf = new ConsumerConfig
-                {
-                    GroupId = "test-consumer-group",
-
-                    BootstrapServers = ip + ":" + port,
+                GroupId = groupId,
+                //AutoOffsetReset = AutoOffsetReset.Latest,
+                BootstrapServers = ip + ":" + port,
                     //SocketTimeoutMs = 1000,
                     //SessionTimeoutMs = 1000,
                     //MetadataRequestTimeoutMs=1000,
                     ReconnectBackoffMs = 1000,
-                    ReconnectBackoffMaxMs = 3000,
+                ReconnectBackoffMaxMs = 3000,
 
 
                     // Note: The AutoOffsetReset property determines the start offset in the event
@@ -117,57 +113,55 @@ namespace KafkaCtl
                     // topic/partitions of interest. By default, offsets are committed
                     // automatically, so in this example, consumption will only start from the
                     // earliest message in the topic 'my-topic' the first time you run the program.
-                    AutoOffsetReset = AutoOffsetReset.Earliest
-                };
-                using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+                    AutoOffsetReset = AutoOffsetReset.Latest
+            };
+            using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+            {
+                c.Subscribe(m_topic);
+                uint cnt = 0;
+                try
                 {
-                    c.Subscribe(m_topic);
-                    uint cnt = 0;
-                    try
+                    while (true)
                     {
-                        while (true)
+                        try
                         {
-                            try
+                            var cr = c.Consume(m_cts.Token);
+                            if (m_save2File)
+                                writer.Write(cr.Message.Value + System.Environment.NewLine);
+                            OnConsumeMsg?.Invoke(this, cr.Message.Value);
+                            cnt++;
+                            if (cntMax != 0)
                             {
-                                var cr = c.Consume(m_cts.Token);
-                                if(m_save2File)
+                                if (cnt >= cntMax)
                                 {
-                                    writer.Write(cr.Message.Value+System.Environment.NewLine);
+                                    c.Close();
+                                    break;
                                 }
-                                OnConsumeMsg?.Invoke(this, cr.Message.Value);
-                                cnt++;
-                                if (cntMax != 0)
-                                {
-                                    if (cnt >= cntMax)
-                                    {
-                                        c.Close();
-                                        break;
-                                    }
-                                }
-                                Thread.Sleep(10);
+                            }
+                            Thread.Sleep(10);
                                 //Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
                             }
-                            catch (ConsumeException ex)
-                            {
-                                MessageBox.Show(ex.Message);
+                        catch (ConsumeException ex)
+                        {
+                            MessageBox.Show(ex.Message);
                                 //Log.LogErr(e.Error.Reason);
                                 //Console.WriteLine($"Error occured: {e.Error.Reason}");
                             }
-                        }
                     }
-                    catch (OperationCanceledException)
-                    {
+                }
+                catch (OperationCanceledException)
+                {
                         // Ensure the consumer leaves the group cleanly and final offsets are committed.
                         c.Close();
                         //return;
                     }
-                }
-               
-                    writer.Close();
-               
-                m_btnConsume.Dispatcher.Invoke(() => { m_btnConsume.IsEnabled = true; });
-                m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = false; });
-            });
+            }
+            if (m_save2File)
+                writer.Close();
+
+            m_btnConsume.Dispatcher.Invoke(() => { m_btnConsume.IsEnabled = true; });
+            m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = false; });
+        });
         }
         private void StopClick(object sender, RoutedEventArgs arg)
         {
@@ -205,13 +199,23 @@ namespace KafkaCtl
                 OnPropertyChanged("m_cnt");
             }
         }
-
+        public string m_groupId
+        {
+            get { return AppConfig.m_conf.AppSettings.Settings["consumer.groupId"].Value; }
+            set
+            {
+                AppConfig.m_conf.AppSettings.Settings["consumer.groupId"].Value = value;
+                OnPropertyChanged("m_groupId");
+            }
+        }
         private bool _m_save2File;
 
         public bool m_save2File
         {
             get { return _m_save2File; }
-            set { _m_save2File = value;
+            set
+            {
+                _m_save2File = value;
                 OnPropertyChanged("m_save2File");
             }
         }

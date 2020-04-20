@@ -19,6 +19,7 @@ using System.Windows.Shapes;
 using CmdLib;
 using Confluent.Kafka;
 using PPs;
+using Common;
 namespace TaaConf
 {
     /// <summary>
@@ -33,6 +34,8 @@ namespace TaaConf
             m_confs.Add(new ConfItem("version", () => { return m_icmd.GetVersion(); }, null));
             m_confs.Add(new ConfItem("broker", () => { return m_icmd.GetBroker(); }, (str) => { m_icmd.SetBroker(str); }));
             m_confs.Add(new ConfItem("save2file", () => { return m_icmd.GetSave2File(); }, (str) => { m_icmd.SetSave2File(str); }));
+            m_confs.Add(new ConfItem("netmapInv", () => { return m_icmd.GetNwPushIntval(); }, (str) => { m_icmd.SetNwPushIntval(str); }));
+            m_confs.Add(new ConfItem("autoDrop", () => { return m_icmd.GetAutoDrop(); }, (str) => { m_icmd.SetAutoDrop(str); }));
             DataContext = this;
 
         }
@@ -320,16 +323,11 @@ namespace TaaConf
             {
                 ip = m_taaIp;
             }
-            using (var tcpClient = new TcpClient())
+            try
             {
-                try
-                {
-                    if (!tcpClient.ConnectAsync(ip, int.Parse(port)).Wait(3000))
-                    {
-                        throw new Exception("connect to " + ip + ":" + port + " timeout within 3000ms");
-                    }
-                }
-                catch (Exception ex)
+                Common.Net.TcpConnectionTest(ip, int.Parse(port), int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
+            }
+            catch (Exception ex)
                 {
                     string msg = ex.Message;
                     if (ex.InnerException != null)
@@ -339,14 +337,13 @@ namespace TaaConf
                     MessageBox.Show(msg);
                     return false;
                 }
-            }
             Task.Run(() =>
             {
                 var conf = new ConsumerConfig
                 {
-                    GroupId = "test-consumer-group",
+                    GroupId = DateTime.Now.ToString(),
                     BootstrapServers = ip + ":" + port,
-                    AutoOffsetReset = AutoOffsetReset.Earliest
+                    AutoOffsetReset = AutoOffsetReset.Latest
                 };
                 using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
                 {

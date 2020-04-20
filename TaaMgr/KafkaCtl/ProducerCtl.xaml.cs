@@ -40,7 +40,7 @@ namespace KafkaCtl
             m_btnStop.IsEnabled = false;
             DataContext = this;
         }
-        private async void ProduceClick(object sender, RoutedEventArgs arg)
+        private  void ProduceClick(object sender, RoutedEventArgs arg)
         {
             m_btnProduce.IsEnabled = false;
             m_btnStop.IsEnabled = true;
@@ -49,6 +49,7 @@ namespace KafkaCtl
             string ip;
             string port;
             string broker;
+            int timeout = int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value);
             if (m_broker.Contains(":"))
             {
                 string[] ary = m_broker.Split(':');
@@ -62,131 +63,125 @@ namespace KafkaCtl
                 port = "9092";
                 broker = ip + ":" + port;
             }
-            using (var tcpClient = new TcpClient())
+            try
             {
-                try
-                {
-                    if (!tcpClient.ConnectAsync(ip, int.Parse(port)).Wait(3000))
-                    {
-                        throw new Exception("connect to " + ip + ":" + port + " timeout within 3000ms");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    string msg = ex.Message;
-                    if (ex.InnerException != null)
-                    {
-                        msg += ex.Message;
-                    }
-                    m_btnProduce.IsEnabled = true;
-                    m_btnStop.IsEnabled = false;
-                    MessageBox.Show(msg);
-                    return;
-                }
-
-
-                tcpClient.Close();
+                Common.Net.TcpConnectionTest(ip, int.Parse(port),timeout);
             }
-           
-            var config = new ProducerConfig
+            catch (Exception ex)
             {
-                BootstrapServers = ip+":"+port,
-                MessageTimeoutMs = 3000,
-            };
-
-            // If serializers are not specified, default serializers from
-            // `Confluent.Kafka.Serializers` will be automatically used where
-            // available. Note: by default strings are encoded as UTF8.
-            using (var p = new ProducerBuilder<Null, string>(config).Build())
-            {
-
-                int cnt = 0;
-                while (cnt < cntMax)
-                {
-                    try
-                    {
-                        var res = await p.ProduceAsync(m_topic, new Message<Null, string> { Value = m_msg });
-                        OnProduceCompleted?.Invoke(this, res.Message.ToString());
-                        cnt++;
-                    }
-                    catch (ProduceException<Null, string> e)
-                    {
-                        MessageBox.Show(e.Message);
-                        break;
-                    }
-                    Thread.Sleep(interval);
-                }
-                OnProduceCompleted?.Invoke(this, "send " + cnt + " times");
-
+                m_btnProduce.IsEnabled = true;
+                m_btnStop.IsEnabled = false;
+                MessageBox.Show(ex.Message);
+                return;
             }
-            m_btnProduce.Dispatcher.Invoke(() => { m_btnProduce.IsEnabled = true; });
-            m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = true; });
-        }
-        private void StopClick(object sender, RoutedEventArgs arg)
-        {
+            m_cts = new CancellationTokenSource();
+            Task.Run(() =>
+            {
+                int okayCnt = 0;
+                int errCnt = 0;
+                int sendCnt = 0;
+                HashSet<string> errSet= new HashSet<string>();
+                Action<DeliveryReport<Null, string>> handler = new Action<DeliveryReport<Null, string>>((r) =>{
+                    if (r.Error.IsError)
+                    { errCnt++; errSet.Add(r.Error.Reason); }
+                    else
+                        okayCnt++;
+                });
+                var config = new ProducerConfig
+                {
+                    BootstrapServers = ip + ":" + port,
+                    MessageTimeoutMs = 3000,
+                   
+                };
+                
+                using (var p = new ProducerBuilder<Null, string>(config).Build())
+                {
+                    for (int i = 0; i < cntMax; i++)
+                    { 
+                        p.Produce(m_topic, new Message<Null, string> {Value = m_msg },handler);
+                        sendCnt++;
+                        if (interval > 0)
+                            Thread.Sleep(interval);
+                        if (m_cts.IsCancellationRequested)
+                            break;
+                    }
+                    p.Flush(m_cts.Token);
+                }
+                int recvCnt = okayCnt + errCnt;
+                string retMsg = "send/recv/error:" + sendCnt + "/" + recvCnt + "/" + errCnt;
+                if(errCnt>0)
+                {
+                    foreach (var ele in errSet)
+                        retMsg += "," + ele;
+                }
+                OnProduceCompleted?.Invoke(this, retMsg);
+            });
             m_btnProduce.IsEnabled = true;
             m_btnStop.IsEnabled = false;
-            bStop = true;
         }
+    private void StopClick(object sender, RoutedEventArgs arg)
+    {
+        m_cts.Cancel();
+    }
 
-        private bool bStop;
+        private CancellationTokenSource m_cts;
 
-        public string m_broker
+    public string m_broker
+    {
+        get { return AppConfig.m_conf.AppSettings.Settings["producer.broker"].Value; }
+        set
         {
-            get { return AppConfig.m_conf.AppSettings.Settings["producer.broker"].Value; }
-            set
-            {
-                AppConfig.m_conf.AppSettings.Settings["producer.broker"].Value = value;
-                OnPropertyChanged("m_broker");
-            }
-        }
-        private string _m_topic;
-
-        public string m_topic
-        {
-            get { return AppConfig.m_conf.AppSettings.Settings["producer.topic"].Value; }
-            set
-            {
-                AppConfig.m_conf.AppSettings.Settings["producer.topic"].Value = value;
-                OnPropertyChanged("m_topic");
-            }
-        }
-
-
-        public string m_msg
-        {
-            get { return AppConfig.m_conf.AppSettings.Settings["producer.msg"].Value; }
-            set
-            {
-                AppConfig.m_conf.AppSettings.Settings["producer.msg"].Value = value;
-                OnPropertyChanged("m_msg");
-            }
-        }
-
-        public string m_cnt
-        {
-            get { return AppConfig.m_conf.AppSettings.Settings["producer.cnt"].Value; }
-            set
-            {
-                AppConfig.m_conf.AppSettings.Settings["producer.cnt"].Value = value;
-                OnPropertyChanged("m_cnt");
-            }
-        }
-        public string m_interval
-        {
-            get { return AppConfig.m_conf.AppSettings.Settings["producer.interval"].Value; }
-            set
-            {
-                AppConfig.m_conf.AppSettings.Settings["producer.interval"].Value = value;
-                OnPropertyChanged("m_interval");
-            }
-        }
-        public event EventHandler<string> OnProduceCompleted;
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            AppConfig.m_conf.AppSettings.Settings["producer.broker"].Value = value;
+            OnPropertyChanged("m_broker");
         }
     }
+    private string _m_topic;
+
+    public string m_topic
+    {
+        get { return AppConfig.m_conf.AppSettings.Settings["producer.topic"].Value; }
+        set
+        {
+            AppConfig.m_conf.AppSettings.Settings["producer.topic"].Value = value;
+            OnPropertyChanged("m_topic");
+        }
+    }
+
+
+    public string m_msg
+    {
+        get { return AppConfig.m_conf.AppSettings.Settings["producer.msg"].Value; }
+        set
+        {
+            AppConfig.m_conf.AppSettings.Settings["producer.msg"].Value = value;
+            OnPropertyChanged("m_msg");
+        }
+    }
+
+    public string m_cnt
+    {
+        get { return AppConfig.m_conf.AppSettings.Settings["producer.cnt"].Value; }
+        set
+        {
+            AppConfig.m_conf.AppSettings.Settings["producer.cnt"].Value = value;
+            OnPropertyChanged("m_cnt");
+        }
+    }
+    public string m_interval
+    {
+        get { return AppConfig.m_conf.AppSettings.Settings["producer.interval"].Value; }
+        set
+        {
+            AppConfig.m_conf.AppSettings.Settings["producer.interval"].Value = value;
+            OnPropertyChanged("m_interval");
+        }
+    }
+    public event EventHandler<string> OnProduceCompleted;
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected virtual void OnPropertyChanged(string propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
 }

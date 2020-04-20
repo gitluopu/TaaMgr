@@ -27,7 +27,7 @@
                     <Setter Property="Foreground" Value="red"></Setter>
                 </Trigger>
                 <Trigger Property="Text" Value="stop">
-                    <Setter Property="Foreground" Value="Yellow"></Setter>
+                    <Setter Property="Foreground" Value="Orange"></Setter>
                 </Trigger>
             </Style.Triggers>
             
@@ -44,7 +44,7 @@
             <Button Content="restart" Click="TaaRestartClick" Style="{StaticResource btnStyle}"></Button>
             <Button Content="stop" Click="TaaStopClick" Style="{StaticResource btnStyle}"></Button>
             <Button Content="traffic" Click="TaaTrafficClick" Style="{StaticResource btnStyle}"></Button>
-            <Button Content="netmap" Click="TaaNetMapClick" Style="{StaticResource btnStyle}"></Button>
+            <Button Content="netmap" Click="TaaNetMapClick"  Style="{StaticResource btnStyle}"></Button>
         </ListBox>
         <ListBox  DockPanel.Dock="Right">
             <Button Content="save" Click="SaveClick" Width="80" Margin="5"></Button>
