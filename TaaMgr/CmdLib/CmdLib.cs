@@ -5,6 +5,7 @@ using System.Windows;
 
 namespace CmdLib
 {
+    using DiagnoseResult = Tuple<DiagnoseStatus, string>;
     public interface ICmnCmd
     {
         void Download(string src, FileInfo dst);
@@ -13,6 +14,14 @@ namespace CmdLib
         void Upload(DirectoryInfo src, string dst);
         string RunCommand(string txt);
     }
+    public enum DiagnoseStatus
+    {
+        HEALTHY,
+        UNKNOWN,
+        UNHEALTHY
+    }
+    public delegate Tuple<DiagnoseStatus, string> DianoseFunc();
+    
     public interface ITaaCmd
     {
         ICmnCmd GetCmnCmd();
@@ -29,8 +38,9 @@ namespace CmdLib
         string GetAutoDrop();
         void SetAutoDrop(string min);
 
+        DiagnoseResult IsAuthOkay();
     }
-    public class TaaCmdUnix : ITaaCmd
+    public partial class TaaCmdUnix : ITaaCmd
     {
         public ICmnCmd GetCmnCmd()
         {
@@ -340,5 +350,15 @@ namespace CmdLib
             }
         }
         private ICmnCmd m_icmd;
+    }
+
+
+    public partial class TaaCmdUnix
+    {
+        public DiagnoseResult IsAuthOkay()
+        {
+            m_icmd.RunCommand("ls /etc/license/IN-SEC.lic");
+            return null;
+        }
     }
 }

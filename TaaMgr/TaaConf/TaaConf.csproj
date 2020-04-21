@@ -72,6 +72,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="AutoDiagnose.cs" />
     <Compile Include="NetMapConsumer.cs" />
     <Compile Include="TaaConf.xaml.cs">
       <DependentUpon>TaaConf.xaml</DependentUpon>
