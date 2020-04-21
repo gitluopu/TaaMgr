@@ -68,11 +68,17 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="AutotDiagnostic.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="TaaConf.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="AutoDiagnose.cs" />
+    <Compile Include="AutotDiagnostic.xaml.cs">
+      <DependentUpon>AutotDiagnostic.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NetMapConsumer.cs" />
     <Compile Include="TaaConf.xaml.cs">
       <DependentUpon>TaaConf.xaml</DependentUpon>

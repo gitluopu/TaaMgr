@@ -30,7 +30,6 @@
                     <Setter Property="Foreground" Value="Orange"></Setter>
                 </Trigger>
             </Style.Triggers>
-            
         </Style>
     </UserControl.Resources>
     <DockPanel LastChildFill="False">
@@ -45,6 +44,7 @@
             <Button Content="stop" Click="TaaStopClick" Style="{StaticResource btnStyle}"></Button>
             <Button Content="traffic" Click="TaaTrafficClick" Style="{StaticResource btnStyle}"></Button>
             <Button Content="netmap" Click="TaaNetMapClick"  Style="{StaticResource btnStyle}"></Button>
+            <Button Content="diagnostic" Click="TaaDiagnosticClick"  Style="{StaticResource btnStyle}"></Button>
         </ListBox>
         <ListBox  DockPanel.Dock="Right">
             <Button Content="save" Click="SaveClick" Width="80" Margin="5"></Button>
@@ -52,16 +52,14 @@
             <Button Content="cancel" Click="CancelClick"  Style="{StaticResource btnStyle}"></Button>
             <Button Content="logout" Click="LogoutClick"  Style="{StaticResource btnStyle}"></Button>
         </ListBox>
-        
-            <ListView DockPanel.Dock="right" ItemsSource="{Binding m_confs}"  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="property" CellTemplate="{StaticResource confName}"/>
-                        <GridViewColumn Header="value" CellTemplate="{StaticResource confValue}" />
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            
-       
+
+        <ListView DockPanel.Dock="right" ItemsSource="{Binding m_confs}"  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="property" CellTemplate="{StaticResource confName}"/>
+                    <GridViewColumn Header="value" CellTemplate="{StaticResource confValue}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
     </DockPanel>
 </UserControl>

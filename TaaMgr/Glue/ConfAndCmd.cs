@@ -11,7 +11,7 @@ using System.IO;
 
 namespace TaaMgr.Glue
 {
-   public  class SShCmd : ICmnCmd
+    public  class SShCmd : ICmnCmd
     {
        public SShCmd(SshClient ssh,ScpClient scp)
         {
@@ -28,10 +28,11 @@ namespace TaaMgr.Glue
             m_scp.Download(src, dst);
         }
 
-        public string RunCommand(string txt)
+        public CmnCmdResult RunCommand(string txt)
         {
-            var res = m_ssh.RunCommand(txt);
-            return res.Result;
+            var r = m_ssh.RunCommand(txt);
+            CmnCmdResult res = new CmnCmdResult(r.Result,r.Error,r.ExitStatus);
+            return res;
         }
 
         public void Upload(FileInfo src, string dst)

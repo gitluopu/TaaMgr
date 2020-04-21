@@ -1,26 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 
 namespace CmdLib
 {
-    using DiagnoseResult = Tuple<DiagnoseStatus, string>;
+    public enum DiagnoseStatus
+    {
+        Okay,
+        Unknown,
+        Error,
+        Waiting
+    }
+    public class CmnCmdResult
+    {
+        public CmnCmdResult(string res,string err, int code)
+        {
+            m_result = res;
+            m_error = err;
+            m_exitCode = code;
+        }
+      public  string m_result;
+      public  string m_error;
+      public  int m_exitCode;
+    }
+    public class DiagnoseResult: INotifyPropertyChanged
+    {
+       public DiagnoseResult()
+        {
+            m_status = DiagnoseStatus.Waiting;
+            m_msg = "";
+        }
+        private DiagnoseStatus _m_status;
+        public DiagnoseStatus m_status { get=>_m_status; set { _m_status = value;OnPropertyChanged("m_status"); } }
+        private string _m_msg;
+        public string m_msg { get=>_m_msg; set { _m_msg = value;OnPropertyChanged("m_msg"); } }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
     public interface ICmnCmd
     {
         void Download(string src, FileInfo dst);
         void Download(string src, DirectoryInfo dst);
         void Upload(FileInfo src, string dst);
         void Upload(DirectoryInfo src, string dst);
-        string RunCommand(string txt);
+        CmnCmdResult RunCommand(string txt);
     }
-    public enum DiagnoseStatus
-    {
-        HEALTHY,
-        UNKNOWN,
-        UNHEALTHY
-    }
-    public delegate Tuple<DiagnoseStatus, string> DianoseFunc();
+   
+    public delegate DiagnoseResult DianoseFunc(DiagnoseResult diag);
     
     public interface ITaaCmd
     {
@@ -37,8 +69,11 @@ namespace CmdLib
         void SetNwPushIntval(string interval);
         string GetAutoDrop();
         void SetAutoDrop(string min);
+        string GetFreeDiskSpace();
+        void SetFreeDiskSpace(string sz);
 
-        DiagnoseResult IsAuthOkay();
+
+        DiagnoseResult IsAuthOkay(DiagnoseResult dres);
     }
     public partial class TaaCmdUnix : ITaaCmd
     {
@@ -64,7 +99,7 @@ namespace CmdLib
         }
         public string GetVersion()
         {
-            return m_icmd.RunCommand("cat /opt/in-sec/taa/bin/README.md");
+            return m_icmd.RunCommand("cat /opt/in-sec/taa/bin/README.md").m_result;
         }
         delegate string JsonProperEditor(string src);
         delegate string JsonPropReader(string src);
@@ -349,16 +384,69 @@ namespace CmdLib
                 MessageBox.Show(ex.Message);
             }
         }
+        public string GetFreeDiskSpace()
+        {
+            string path = Common.Dir.GetCacheDir() + @"svrplugin/Main/FileManagerPlugin.svrplugin";
+            string min = "";
+            try
+            {
+                min = GetProperty(path, (src) =>
+                {
+                    string dst;
+                    var obj = Confs.FileManager.CFileManager.FromJson(src);
+                    dst = obj.Config.DiskFreeSpace.ToString();
+                    return dst;
+                });
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            return min;
+        }
+        public void SetFreeDiskSpace(string sz)
+        {
+            string path = Common.Dir.GetCacheDir() + @"svrplugin/Main/FileManagerPlugin.svrplugin";
+            try
+            {
+                SetProperty(path, (src) =>
+                {
+                    string dst;
+                    var obj = Confs.FileManager.CFileManager.FromJson(src);
+                    obj.Config.DiskFreeSpace = long.Parse(sz);
+                    dst = Confs.FileManager.Serialize.ToJson(obj);
+                    return dst;
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
         private ICmnCmd m_icmd;
     }
 
 
     public partial class TaaCmdUnix
     {
-        public DiagnoseResult IsAuthOkay()
+        public DiagnoseResult IsAuthOkay(DiagnoseResult dres)
         {
-            m_icmd.RunCommand("ls /etc/license/IN-SEC.lic");
-            return null;
+            var res = m_icmd.RunCommand("ls /etc/license/IN-SEC.lic");
+            if(res.m_exitCode!=0)
+            {
+                dres.m_status = DiagnoseStatus.Okay;
+                dres.m_msg += res.m_error;
+            }
+            //This system without authorization, Please contact the manufacturer!
+            res = m_icmd.RunCommand("tail /var/log/in-sec-taa/TAAMaster.log -n 20");
+            if(res.m_exitCode==0)
+            {
+                if (res.m_result.Contains("without authorization"))
+                {
+                    dres.m_status = DiagnoseStatus.Error;
+                    dres.m_msg += "This system without authorization, Please contact the manufacturer!";
+                }
+            }
+            if (dres.m_status == DiagnoseStatus.Waiting)
+                dres.m_status = DiagnoseStatus.Okay;
+            return dres;
         }
     }
 }

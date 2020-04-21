@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CmdLib.cs" />
+    <Compile Include="Confs\FileManager.cs" />
     <Compile Include="Confs\FmeNetworkAnalysis.cs" />
     <Compile Include="Confs\LocalRedisClient.cs" />
     <Compile Include="Confs\NetMap.cs" />

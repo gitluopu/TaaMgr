@@ -36,6 +36,7 @@ namespace TaaConf
             m_confs.Add(new ConfItem("save2file", () => { return m_icmd.GetSave2File(); }, (str) => { m_icmd.SetSave2File(str); }));
             m_confs.Add(new ConfItem("netmapInv", () => { return m_icmd.GetNwPushIntval(); }, (str) => { m_icmd.SetNwPushIntval(str); }));
             m_confs.Add(new ConfItem("autoDrop", () => { return m_icmd.GetAutoDrop(); }, (str) => { m_icmd.SetAutoDrop(str); }));
+            m_confs.Add(new ConfItem("freeSpace", () => { return m_icmd.GetFreeDiskSpace(); }, (str) => { m_icmd.SetFreeDiskSpace(str); }));
             DataContext = this;
 
         }
@@ -58,7 +59,7 @@ namespace TaaConf
                         string status;
                         try
                         {
-                            status = this.m_icmd.GetCmnCmd().RunCommand("ps ajx | grep taa|grep -v grep");
+                            status = this.m_icmd.GetCmnCmd().RunCommand("ps ajx | grep taa|grep -v grep").m_result;
                         }
                         catch (Exception ex)
                         {
@@ -135,7 +136,7 @@ namespace TaaConf
                 }
                 catch (Exception ex)
                 {
-
+                    //MessageBox.Show(ex.Message);
                     return;
                 }
             }, m_tokenSource.Token);
@@ -328,15 +329,15 @@ namespace TaaConf
                 Common.Net.TcpConnectionTest(ip, int.Parse(port), int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
             }
             catch (Exception ex)
+            {
+                string msg = ex.Message;
+                if (ex.InnerException != null)
                 {
-                    string msg = ex.Message;
-                    if (ex.InnerException != null)
-                    {
-                        msg += ex.Message;
-                    }
-                    MessageBox.Show(msg);
-                    return false;
+                    msg += ex.Message;
                 }
+                MessageBox.Show(msg);
+                return false;
+            }
             Task.Run(() =>
             {
                 var conf = new ConsumerConfig
@@ -427,7 +428,13 @@ namespace TaaConf
             if (okay)
                 win.Show();
         }
-
+        private void TaaDiagnosticClick(object sender, RoutedEventArgs e)
+        {
+            Window win = new Window();
+            AutotDiagnostic diag = new AutotDiagnostic(m_icmd);
+            win.Content = diag;
+            win.Show();
+        }
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)
