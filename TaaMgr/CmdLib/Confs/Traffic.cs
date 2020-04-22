@@ -57,6 +57,7 @@ namespace CmdLib.Confs
             {
                 MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
                 DateParseHandling = DateParseHandling.None,
+                Formatting = Formatting.Indented,
                 Converters =
             {
                 new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
