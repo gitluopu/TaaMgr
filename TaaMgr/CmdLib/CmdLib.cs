@@ -371,11 +371,14 @@ namespace CmdLib
             }
             if(minSet.Count>1)
                 MessageBox.Show("autoDrop in main and child are different");
-            if (minSet.Count == 0)
-                return "";
+            string retStr = "";
             foreach (var ele in minSet)
-                return ele;
-            return "";
+            {
+                if (retStr.Length > 0)
+                    retStr += ",";
+                retStr += ele;
+            }
+            return retStr;
         }
         public void SetAutoDrop(string min)
         {
