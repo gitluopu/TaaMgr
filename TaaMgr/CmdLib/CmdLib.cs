@@ -15,27 +15,27 @@ namespace CmdLib
     }
     public class CmnCmdResult
     {
-        public CmnCmdResult(string res,string err, int code)
+        public CmnCmdResult(string res, string err, int code)
         {
             m_result = res;
             m_error = err;
             m_exitCode = code;
         }
-      public  string m_result;
-      public  string m_error;
-      public  int m_exitCode;
+        public string m_result;
+        public string m_error;
+        public int m_exitCode;
     }
-    public class DiagnoseResult: INotifyPropertyChanged
+    public class DiagnoseResult : INotifyPropertyChanged
     {
-       public DiagnoseResult()
+        public DiagnoseResult()
         {
             m_status = DiagnoseStatus.Waiting;
             m_msg = "";
         }
         private DiagnoseStatus _m_status;
-        public DiagnoseStatus m_status { get=>_m_status; set { _m_status = value;OnPropertyChanged("m_status"); } }
+        public DiagnoseStatus m_status { get => _m_status; set { _m_status = value; OnPropertyChanged("m_status"); } }
         private string _m_msg;
-        public string m_msg { get=>_m_msg; set { _m_msg = value;OnPropertyChanged("m_msg"); } }
+        public string m_msg { get => _m_msg; set { _m_msg = value; OnPropertyChanged("m_msg"); } }
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)
@@ -51,9 +51,9 @@ namespace CmdLib
         void Upload(DirectoryInfo src, string dst);
         CmnCmdResult RunCommand(string txt);
     }
-   
+
     public delegate DiagnoseResult DianoseFunc(DiagnoseResult diag);
-    
+
     public interface ITaaCmd
     {
         ICmnCmd GetCmnCmd();
@@ -350,27 +350,43 @@ namespace CmdLib
 
         public string GetAutoDrop()
         {
-            string path = Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin";
-            string min = "";
-            try
+            string[] path ={ Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin",
+            Common.Dir.GetCacheDir() + @"svrplugin/Main/LocalRedisClientPlugin.svrplugin"
+            };
+            HashSet<string> minSet = new HashSet<string>();
+            foreach (var ele in path)
             {
-                min = GetProperty(path, (src) =>
-            {
-                string dst;
-                var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
-                dst = obj.Config.MaxDelayMin.ToString();
-                return dst;
-            });
+                try
+                {
+                    string min = GetProperty(ele, (src) =>
+                 {
+                     string dst;
+                     var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
+                     dst = obj.Config.MaxDelayMin.ToString();
+                     return dst;
+                 });
+                    minSet.Add(min);
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
-            return min;
+            if(minSet.Count>1)
+                MessageBox.Show("autoDrop in main and child are different");
+            if (minSet.Count == 0)
+                return "";
+            foreach (var ele in minSet)
+                return ele;
+            return "";
         }
         public void SetAutoDrop(string min)
         {
-            string path = Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin";
+            string[] path ={ Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin",
+            Common.Dir.GetCacheDir() + @"svrplugin/Main/LocalRedisClientPlugin.svrplugin"
+            };
+            foreach(var ele in path)
+            { 
             try
             {
-                SetProperty(path, (src) =>
+                SetProperty(ele, (src) =>
                 {
                     string dst;
                     var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
@@ -382,6 +398,7 @@ namespace CmdLib
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
             }
         }
         public string GetFreeDiskSpace()
@@ -429,14 +446,14 @@ namespace CmdLib
         public DiagnoseResult IsAuthOkay(DiagnoseResult dres)
         {
             var res = m_icmd.RunCommand("ls /etc/license/IN-SEC.lic");
-            if(res.m_exitCode!=0)
+            if (res.m_exitCode != 0)
             {
                 dres.m_status = DiagnoseStatus.Okay;
                 dres.m_msg += res.m_error;
             }
             //This system without authorization, Please contact the manufacturer!
             res = m_icmd.RunCommand("tail /var/log/in-sec-taa/TAAMaster.log -n 20");
-            if(res.m_exitCode==0)
+            if (res.m_exitCode == 0)
             {
                 if (res.m_result.Contains("without authorization"))
                 {
