@@ -37,6 +37,7 @@ namespace TaaConf
             m_confs.Add(new ConfItem("netmapInv", () => { return m_icmd.GetNwPushIntval(); }, (str) => { m_icmd.SetNwPushIntval(str); }));
             m_confs.Add(new ConfItem("autoDrop", () => { return m_icmd.GetAutoDrop(); }, (str) => { m_icmd.SetAutoDrop(str); }));
             m_confs.Add(new ConfItem("freeSpace", () => { return m_icmd.GetFreeDiskSpace(); }, (str) => { m_icmd.SetFreeDiskSpace(str); }));
+            m_confs.Add(new ConfItem("redis", () => { return m_icmd.GetRedisSvr(); }, (str) => { m_icmd.SetRedisSvr(str); }));
             DataContext = this;
 
         }
@@ -132,6 +133,7 @@ namespace TaaConf
                         {
                             m_taaInfs = _infs;
                         }
+                        Thread.Sleep(500);
                     }
                 }
                 catch (Exception ex)
@@ -431,10 +433,18 @@ namespace TaaConf
         private void TaaDiagnosticClick(object sender, RoutedEventArgs e)
         {
             Window win = new Window();
-            AutotDiagnostic diag = new AutotDiagnostic(m_icmd);
+            AutotDiagnostic diag = new AutotDiagnostic(this);
             win.Content = diag;
             win.Show();
         }
+        private void TaaKeyClick(object sender, RoutedEventArgs e)
+        {
+            Window win = new Window();
+            TaaKey diag = new TaaKey(this);
+            win.Content = diag;
+            win.Show();
+        }
+        
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)

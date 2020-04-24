@@ -41,7 +41,35 @@ namespace Common
             m_conf.Save();
         }
     }
+    public class BrokerUnit
+    {
+        public BrokerUnit()
+        { }
+        public BrokerUnit(string ip,int port,string broker)
+        {
+            m_ip = ip;
+            m_port = port;
+            m_broker = broker;
+        }
+        public string m_broker;
+        public string m_ip;
+        public int m_port;
+    }
 
+    public class RedisUnit
+    {
+        public RedisUnit()
+        { }
+        public RedisUnit(string ip, int port, string passwd)
+        {
+            m_ip = ip;
+            m_port = port;
+            m_passwd = passwd;
+        }
+        public string m_ip;
+        public int m_port;
+        public string m_passwd;
+    }
     public static class Net
     {
         public static void TcpConnectionTest(string ip, int port, int ms)
@@ -65,6 +93,23 @@ namespace Common
                     throw new Exception(msg);
                 }
             }
+        }
+        public static BrokerUnit GetBrokerUnit(string _broker)
+        {
+            string broker, ip, port;
+            if(_broker.Contains(":"))
+            {
+                broker = _broker;
+                string[] strs = _broker.Split(':');
+                ip = strs[0];
+                port = strs[1];
+            }else
+            {
+                ip = _broker;
+                port = "9092";
+                broker = ip + ":" + port;
+            }
+            return new BrokerUnit(ip, int.Parse(port), broker);
         }
     }
 }

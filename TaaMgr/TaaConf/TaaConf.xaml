@@ -44,6 +44,7 @@
             <Button Content="stop" Click="TaaStopClick" Style="{StaticResource btnStyle}"></Button>
             <Button Content="traffic" Click="TaaTrafficClick" Style="{StaticResource btnStyle}"></Button>
             <Button Content="netmap" Click="TaaNetMapClick"  Style="{StaticResource btnStyle}"></Button>
+            <Button Content="taaKey" Click="TaaKeyClick"  Style="{StaticResource btnStyle}"></Button>
             <Button Content="diagnostic" Click="TaaDiagnosticClick"  Style="{StaticResource btnStyle}"></Button>
         </ListBox>
         <ListBox  DockPanel.Dock="Right">

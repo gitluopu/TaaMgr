@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using CmdLib;
+using Common;
 namespace TaaConf
 {
     /// <summary>
@@ -20,12 +21,17 @@ namespace TaaConf
     /// </summary>
     public partial class AutotDiagnostic : UserControl
     {
-        public AutotDiagnostic(ITaaCmd cmd)
+        public AutotDiagnostic(TaaConfCtl conf)
         {
             InitializeComponent();
-            m_cmd = cmd;
+            m_conf = conf;
+            BrokerUnit bu=null;
+            foreach (var ele in m_conf.m_confs)
+                if (ele.m_name == "broker")
+                    bu = Net.GetBrokerUnit(ele.m_value);
             m_items = new List<DiagnoseItem>();
-            m_items.Add(new DiagnoseItem("auth", "look up /etc/license/IN-SEC.lic and TAAMaster.log", m_cmd.IsAuthOkay));
+            m_items.Add(new DiagnoseItem("auth", "look up /etc/license/IN-SEC.lic and TAAMaster.log", m_conf.m_icmd.IsAuthOkay));
+            m_items.Add(new DiagnoseItem("kafka", "connect broker", m_conf.m_icmd.IsKfkaOkay, bu));
             DataContext = this;
             Task.Run(() =>{ 
             foreach (var ele in m_items)
@@ -41,13 +47,21 @@ namespace TaaConf
                 m_func = f;
                 m_result = new DiagnoseResult();
             }
+            public DiagnoseItem(string name, string desc, DianoseFunc f,object param)
+            {
+                m_name = name;
+                m_desc = desc;
+                m_func = f;
+                m_result = new DiagnoseResult();
+                m_result.m_param = param;
+            }
             public string m_name { get; set; }
             public string m_desc { get; set; }
             public DianoseFunc m_func { get; set; }
             public DiagnoseResult m_result { get; set; }
         }
 
-        private ITaaCmd m_cmd { get; set; }
+        private TaaConfCtl m_conf { get; set; }
         public List<DiagnoseItem> m_items { get; set; }
     }
 }

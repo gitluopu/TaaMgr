@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
-
+using Common;
 namespace CmdLib
 {
     public enum DiagnoseStatus
@@ -36,8 +36,8 @@ namespace CmdLib
         public DiagnoseStatus m_status { get => _m_status; set { _m_status = value; OnPropertyChanged("m_status"); } }
         private string _m_msg;
         public string m_msg { get => _m_msg; set { _m_msg = value; OnPropertyChanged("m_msg"); } }
+        public object m_param;
         public event PropertyChangedEventHandler PropertyChanged;
-
         protected virtual void OnPropertyChanged(string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -71,9 +71,11 @@ namespace CmdLib
         void SetAutoDrop(string min);
         string GetFreeDiskSpace();
         void SetFreeDiskSpace(string sz);
-
+        string GetRedisSvr();
+        void SetRedisSvr(string sz);
 
         DiagnoseResult IsAuthOkay(DiagnoseResult dres);
+        DiagnoseResult IsKfkaOkay(DiagnoseResult dres);
     }
     public partial class TaaCmdUnix : ITaaCmd
     {
@@ -138,7 +140,6 @@ namespace CmdLib
             HashSet<string> ret = new HashSet<string>();
             foreach (var path in policies)
             {
-
                 try
                 {
                     string str = GetProperty(path, (src) =>
@@ -154,14 +155,14 @@ namespace CmdLib
                 }
 
             }
-            foreach (var path in policies)
+            foreach (var path in strategies)
             {
                 try
                 {
                     string str = GetProperty(path, (src) =>
                     {
-                        var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
-                        return obj.Config.Producerconfig.Brokers;
+                        var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
+                        return obj.Config.Brokers;
                     });
                     ret.Add(str);
                 }
@@ -192,7 +193,7 @@ namespace CmdLib
             {
                 if (retStr.Length > 0)
                 {
-                    retStr += ";";
+                    retStr += ",";
                 }
                 retStr += ele;
             }
@@ -440,6 +441,45 @@ namespace CmdLib
                 MessageBox.Show(ex.Message);
             }
         }
+
+        public string GetRedisSvr()
+        {
+            string[] path ={ Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin",
+            Common.Dir.GetCacheDir() + @"svrplugin/Main/LocalRedisClientPlugin.svrplugin"
+            };
+            HashSet<RedisUnit> redisSet = new HashSet<RedisUnit>();
+            foreach (var ele in path)
+            {
+                try
+                {
+                    string min = GetProperty(ele, (src) =>
+                    {
+                        RedisUnit ru = new RedisUnit();
+                        var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
+                        ru.m_ip = obj.Config.Host;
+                        ru.m_port = (int)obj.Config.Port;
+                        ru.m_passwd = obj.Config.Password;
+                        redisSet.Add(ru);
+                        return ru.m_ip;
+                    });
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
+            }
+            //if (redisSet.Count > 1)
+            //    MessageBox.Show("autoDrop in main and child are different");
+            string retStr = "";
+            foreach (var ele in redisSet)
+            {
+                if (retStr.Length > 0)
+                    retStr += ",";
+                retStr += ele.m_ip + ":" + ele.m_port.ToString() + ":" + ele.m_passwd;
+            }
+            return retStr;
+        }
+        public void SetRedisSvr(string sz)
+        {
+
+        }
         private ICmnCmd m_icmd;
     }
 
@@ -466,6 +506,21 @@ namespace CmdLib
             }
             if (dres.m_status == DiagnoseStatus.Waiting)
                 dres.m_status = DiagnoseStatus.Okay;
+            return dres;
+        }
+
+       public  DiagnoseResult IsKfkaOkay(DiagnoseResult dres)
+        {
+            BrokerUnit bu = dres.m_param as BrokerUnit;
+            try
+            {
+                Net.TcpConnectionTest(bu.m_ip,bu.m_port, int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
+            }catch(Exception ex)
+            {
+                dres.m_status = DiagnoseStatus.Error;
+                dres.m_msg += ex.Message;
+            }
+            CmnCmdResult res = m_icmd.RunCommand("ss -anp | grep 9092 | grep TAA");
             return dres;
         }
     }
