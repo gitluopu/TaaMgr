@@ -45,6 +45,25 @@ namespace Common
     {
         public BrokerUnit()
         { }
+        public override string ToString() 
+        {
+            return m_broker.ToString();
+        }
+        public BrokerUnit(string _broker)
+        {
+            if (_broker.Contains(":"))
+            {
+                string[] strAry = _broker.Split(':');
+                m_ip = strAry[0];
+                m_port = int.Parse(strAry[1]);
+                m_broker = _broker;
+            } else
+            {
+                m_ip = _broker;
+                m_port = 9092;
+                m_broker = m_ip + ":" + m_port.ToString();
+            }
+        }
         public BrokerUnit(string ip,int port,string broker)
         {
             m_ip = ip;
@@ -52,7 +71,8 @@ namespace Common
             m_broker = broker;
         }
         public string m_broker;
-        public string m_ip;
+        private string _m_ip;
+        public string m_ip { get => _m_ip; set { _m_ip = value; m_broker = _m_ip + ":" + m_port.ToString(); } }
         public int m_port;
     }
 
@@ -60,6 +80,17 @@ namespace Common
     {
         public RedisUnit()
         { }
+        public override string ToString()
+        {
+            return m_ip+":"+m_port.ToString()+":"+m_passwd;
+        }
+        public RedisUnit(string _info)
+        {
+            string[] strAry = _info.Split(':');
+            m_ip = strAry[0];
+            m_port = int.Parse(strAry[1]);
+            m_passwd = strAry[2];
+        }
         public RedisUnit(string ip, int port, string passwd)
         {
             m_ip = ip;
@@ -93,23 +124,6 @@ namespace Common
                     throw new Exception(msg);
                 }
             }
-        }
-        public static BrokerUnit GetBrokerUnit(string _broker)
-        {
-            string broker, ip, port;
-            if(_broker.Contains(":"))
-            {
-                broker = _broker;
-                string[] strs = _broker.Split(':');
-                ip = strs[0];
-                port = strs[1];
-            }else
-            {
-                ip = _broker;
-                port = "9092";
-                broker = ip + ":" + port;
-            }
-            return new BrokerUnit(ip, int.Parse(port), broker);
         }
     }
 }

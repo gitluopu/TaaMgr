@@ -56,26 +56,10 @@ namespace KafkaCtl
         {
             m_btnConsume.IsEnabled = false;
             m_btnStop.Dispatcher.Invoke(() => { m_btnStop.IsEnabled = true; });
-            string ip;
-            string port;
-            string broker;
-
-            if (m_broker.Contains(":"))
-            {
-                string[] ary = m_broker.Split(':');
-                ip = ary[0];
-                port = ary[1];
-                broker = m_broker;
-            }
-            else
-            {
-                ip = m_broker;
-                port = "9092";
-                broker = ip + ":" + port;
-            }
+            BrokerUnit bu = new BrokerUnit(m_broker);
                 try
                 {
-                    Common.Net.TcpConnectionTest(ip,int.Parse(port),int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
+                    Common.Net.TcpConnectionTest(bu.m_ip, bu.m_port,int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
                 }
                 catch (Exception ex)
                 {
@@ -90,7 +74,7 @@ namespace KafkaCtl
             m_cts = new CancellationTokenSource();
             StreamWriter writer = null;
             if (m_save2File)
-                writer = new StreamWriter(Common.Dir.GetCacheDir() + ip + "-" + m_topic + ".log");
+                writer = new StreamWriter(Common.Dir.GetCacheDir() + bu.m_ip + "-" + m_topic + ".log");
             string groupId = null;
             if (m_groupId == "")
                 groupId = DateTime.Now.ToString();
@@ -100,7 +84,7 @@ namespace KafkaCtl
             {
                 GroupId = groupId,
                 //AutoOffsetReset = AutoOffsetReset.Latest,
-                BootstrapServers = ip + ":" + port,
+                BootstrapServers = bu.m_broker,
                     //SocketTimeoutMs = 1000,
                     //SessionTimeoutMs = 1000,
                     //MetadataRequestTimeoutMs=1000,

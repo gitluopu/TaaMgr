@@ -298,37 +298,22 @@ namespace TaaConf
         }
         private bool Consume(string topic, CancellationTokenSource ct, EventHandler<string> msgHandler)
         {
-            string ip;
-            string port;
-            string _broker = "";
+            BrokerUnit bu = null;
             foreach (var ele in m_confs)
             {
                 if (ele.m_name == "broker")
                 {
-                    _broker = ele.m_value;
+                    bu = new BrokerUnit(ele.m_value);
                     break;
                 }
             }
-            if (_broker.Length < 0)
-                return false;
-            if (_broker.Contains(":"))
+            if (bu.m_ip == "127.0.0.1")
             {
-                string[] ary = _broker.Split(':');
-                ip = ary[0];
-                port = ary[1];
-            }
-            else
-            {
-                ip = _broker;
-                port = "9092";
-            }
-            if (ip == "127.0.0.1")
-            {
-                ip = m_taaIp;
+                bu.m_ip = m_taaIp;
             }
             try
             {
-                Common.Net.TcpConnectionTest(ip, int.Parse(port), int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
+                Common.Net.TcpConnectionTest(bu.m_ip, bu.m_port, int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
             }
             catch (Exception ex)
             {
@@ -345,7 +330,7 @@ namespace TaaConf
                 var conf = new ConsumerConfig
                 {
                     GroupId = DateTime.Now.ToString(),
-                    BootstrapServers = ip + ":" + port,
+                    BootstrapServers = bu.m_broker,
                     AutoOffsetReset = AutoOffsetReset.Latest
                 };
                 using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())

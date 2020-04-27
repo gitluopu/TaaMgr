@@ -46,26 +46,10 @@ namespace KafkaCtl
             m_btnStop.IsEnabled = true;
             int cntMax = int.Parse(m_cnt);
             int interval = int.Parse(m_interval);
-            string ip;
-            string port;
-            string broker;
-            int timeout = int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value);
-            if (m_broker.Contains(":"))
-            {
-                string[] ary = m_broker.Split(':');
-                ip = ary[0];
-                port = ary[1];
-                broker = m_broker;
-            }
-            else
-            {
-                ip = m_broker;
-                port = "9092";
-                broker = ip + ":" + port;
-            }
+            BrokerUnit bu = new BrokerUnit(m_broker);
             try
             {
-                Common.Net.TcpConnectionTest(ip, int.Parse(port),timeout);
+                Common.Net.TcpConnectionTest(bu.m_ip, bu.m_port, int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
             }
             catch (Exception ex)
             {
@@ -89,7 +73,7 @@ namespace KafkaCtl
                 });
                 var config = new ProducerConfig
                 {
-                    BootstrapServers = ip + ":" + port,
+                    BootstrapServers = bu.m_broker,
                     MessageTimeoutMs = 3000,
                    
                 };

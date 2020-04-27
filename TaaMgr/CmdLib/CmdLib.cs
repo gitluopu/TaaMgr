@@ -370,7 +370,7 @@ namespace CmdLib
                 }
                 catch (Exception ex) { MessageBox.Show(ex.Message); }
             }
-            if(minSet.Count>1)
+            if (minSet.Count > 1)
                 MessageBox.Show("autoDrop in main and child are different");
             string retStr = "";
             foreach (var ele in minSet)
@@ -386,23 +386,23 @@ namespace CmdLib
             string[] path ={ Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin",
             Common.Dir.GetCacheDir() + @"svrplugin/Main/LocalRedisClientPlugin.svrplugin"
             };
-            foreach(var ele in path)
-            { 
-            try
+            foreach (var ele in path)
             {
-                SetProperty(ele, (src) =>
+                try
                 {
-                    string dst;
-                    var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
-                    obj.Config.MaxDelayMin = long.Parse(min);
-                    dst = Confs.LocalRedisClient.Serialize.ToJson(obj);
-                    return dst;
-                });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+                    SetProperty(ele, (src) =>
+                    {
+                        string dst;
+                        var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
+                        obj.Config.MaxDelayMin = long.Parse(min);
+                        dst = Confs.LocalRedisClient.Serialize.ToJson(obj);
+                        return dst;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
         }
         public string GetFreeDiskSpace()
@@ -447,7 +447,7 @@ namespace CmdLib
             string[] path ={ Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin",
             Common.Dir.GetCacheDir() + @"svrplugin/Main/LocalRedisClientPlugin.svrplugin"
             };
-            HashSet<RedisUnit> redisSet = new HashSet<RedisUnit>();
+            HashSet<String> redisSet = new HashSet<String>();
             foreach (var ele in path)
             {
                 try
@@ -459,26 +459,49 @@ namespace CmdLib
                         ru.m_ip = obj.Config.Host;
                         ru.m_port = (int)obj.Config.Port;
                         ru.m_passwd = obj.Config.Password;
-                        redisSet.Add(ru);
+                        redisSet.Add(ru.ToString());
                         return ru.m_ip;
                     });
                 }
                 catch (Exception ex) { MessageBox.Show(ex.Message); }
             }
-            //if (redisSet.Count > 1)
-            //    MessageBox.Show("autoDrop in main and child are different");
+            if (redisSet.Count > 1)
+                MessageBox.Show("autoDrop in main and child are different");
             string retStr = "";
             foreach (var ele in redisSet)
             {
                 if (retStr.Length > 0)
                     retStr += ",";
-                retStr += ele.m_ip + ":" + ele.m_port.ToString() + ":" + ele.m_passwd;
+                retStr += ele;
             }
             return retStr;
         }
-        public void SetRedisSvr(string sz)
+        public void SetRedisSvr(string rs)
         {
-
+            RedisUnit ru = new RedisUnit(rs);
+            string[] path ={ Common.Dir.GetCacheDir() + @"svrplugin/Child/LocalRedisClientPlugin.svrplugin",
+            Common.Dir.GetCacheDir() + @"svrplugin/Main/LocalRedisClientPlugin.svrplugin"
+            };
+            foreach (var ele in path)
+            {
+                try
+                {
+                    SetProperty(ele, (src) =>
+                    {
+                        string dst;
+                        var obj = Confs.LocalRedisClient.CLocalRedisClient.FromJson(src);
+                        obj.Config.Host = ru.m_ip;
+                        obj.Config.Password = ru.m_passwd;
+                        obj.Config.Port = ru.m_port;
+                        dst = Confs.LocalRedisClient.Serialize.ToJson(obj);
+                        return dst;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
         }
         private ICmnCmd m_icmd;
     }
@@ -509,13 +532,14 @@ namespace CmdLib
             return dres;
         }
 
-       public  DiagnoseResult IsKfkaOkay(DiagnoseResult dres)
+        public DiagnoseResult IsKfkaOkay(DiagnoseResult dres)
         {
             BrokerUnit bu = dres.m_param as BrokerUnit;
             try
             {
-                Net.TcpConnectionTest(bu.m_ip,bu.m_port, int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
-            }catch(Exception ex)
+                Net.TcpConnectionTest(bu.m_ip, bu.m_port, int.Parse(AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value));
+            }
+            catch (Exception ex)
             {
                 dres.m_status = DiagnoseStatus.Error;
                 dres.m_msg += ex.Message;

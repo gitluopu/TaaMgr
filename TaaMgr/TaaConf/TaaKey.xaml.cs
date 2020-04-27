@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Common;
 using StackExchange.Redis;
 namespace TaaConf
 {
@@ -78,27 +79,33 @@ namespace TaaConf
         public TaaKey(TaaConfCtl conf)
         {
             InitializeComponent();
-            m_conf = conf;
-            string redisInfo = null;
-            foreach (var ele in m_conf.m_confs)
-                if (ele.m_name == "redis")
-                    redisInfo = ele.m_value;
-            string[] units = redisInfo.Split(',');
-            string[] eles = units[0].Split(':');
-            string ip = eles[0];
-            string port = eles[1];
-            if (ip == "127.0.0.1")
-                ip = m_conf.m_taaIp;
-            string addr = ip + ":" + port;
-            MessageBox.Show(addr);
-            m_keys = new List<KeyItem>();
-            m_redis = ConnectionMultiplexer.Connect(addr +",Password=insec@666");
-            m_db = m_redis.GetDatabase(1);
-            m_cts = new CancellationTokenSource();
-            PollTaaKeyOnce();
-            DataContext = this;
-            this.Unloaded += (sender,e) => { m_cts.Cancel(); };
-            Task.Run(()=> { PollTaaKeys(); });
+            Task.Run(() =>
+            {
+                m_conf = conf;
+                RedisUnit ru = null;
+                foreach (var ele in m_conf.m_confs)
+                    if (ele.m_name == "redis")
+                        ru = new RedisUnit(ele.m_value);
+                if (ru.m_ip == "127.0.0.1")
+                    ru.m_ip = m_conf.m_taaIp;
+                m_keys = new List<KeyItem>();
+                string timeout = AppConfig.m_conf.AppSettings.Settings["operationTimeout"].Value;
+                try { 
+                m_redis = ConnectionMultiplexer.Connect(ru.m_ip + ":" + ru.m_port.ToString() + ",Password=" + ru.m_passwd+ ",ConnectTimeout="+ timeout);
+                }catch(Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    return;
+                }
+                    m_db = m_redis.GetDatabase(1);
+                m_cts = new CancellationTokenSource();
+                PollTaaKeyOnce();
+                this.Dispatcher.Invoke(() => {
+                    this.DataContext = this;
+                    this.Unloaded += (sender, e) => { m_cts.Cancel(); };
+                });
+                Task.Run(() => { PollTaaKeys(); });
+            });
         }
         private void PollTaaKeys()
         {

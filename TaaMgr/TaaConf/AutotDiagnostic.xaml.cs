@@ -28,7 +28,7 @@ namespace TaaConf
             BrokerUnit bu=null;
             foreach (var ele in m_conf.m_confs)
                 if (ele.m_name == "broker")
-                    bu = Net.GetBrokerUnit(ele.m_value);
+                    bu = new BrokerUnit(ele.m_value);
             m_items = new List<DiagnoseItem>();
             m_items.Add(new DiagnoseItem("auth", "look up /etc/license/IN-SEC.lic and TAAMaster.log", m_conf.m_icmd.IsAuthOkay));
             m_items.Add(new DiagnoseItem("kafka", "connect broker", m_conf.m_icmd.IsKfkaOkay, bu));
