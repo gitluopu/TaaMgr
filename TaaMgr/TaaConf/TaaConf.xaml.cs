@@ -20,6 +20,8 @@ using CmdLib;
 using Confluent.Kafka;
 using PPs;
 using Common;
+using System.Text.RegularExpressions;
+
 namespace TaaConf
 {
     /// <summary>
@@ -125,6 +127,27 @@ namespace TaaConf
                         {
                             _status = "stop";
                         }
+                        if (_status == "running") //look up kafka broker
+                        {
+                            BrokerUnit bu = null;
+                            foreach (var ele in m_confs)
+                                if (ele.m_name == "broker")
+                                    bu = new BrokerUnit(ele.m_value);
+                            CmnCmdResult res = m_icmd.GetCmnCmd().RunCommand("ss -anp | grep " + bu.m_port.ToString() + " | grep TAA");
+                            if (res.m_exitCode != 0)
+                            {
+                                _status = "unknown";
+                            }
+                            else
+                            {
+                                int TAACount = Regex.Matches(res.m_result, "TAA").Count;
+                                int ESTABCount = Regex.Matches(res.m_result, "ESTAB").Count;
+                                if (TAACount != ESTABCount)
+                                {
+                                    _status = "unknown";
+                                }
+                            }
+                        }
                         if (_status != m_taaStatus)
                         {
                             m_taaStatus = _status;
@@ -146,8 +169,8 @@ namespace TaaConf
         }
         private void SaveClick(object sender, RoutedEventArgs e)
         {
-            SetDataChanged();
             InitData();
+            SetDataChanged();
         }
         private void RefreshClick(object sender, RoutedEventArgs e)
         {
@@ -429,7 +452,7 @@ namespace TaaConf
             win.Content = diag;
             win.Show();
         }
-        
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName = null)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows;
 using Common;
 namespace CmdLib
@@ -514,7 +515,7 @@ namespace CmdLib
             var res = m_icmd.RunCommand("ls /etc/license/IN-SEC.lic");
             if (res.m_exitCode != 0)
             {
-                dres.m_status = DiagnoseStatus.Okay;
+                dres.m_status = DiagnoseStatus.Error;
                 dres.m_msg += res.m_error;
             }
             //This system without authorization, Please contact the manufacturer!
@@ -544,7 +545,24 @@ namespace CmdLib
                 dres.m_status = DiagnoseStatus.Error;
                 dres.m_msg += ex.Message;
             }
-            CmnCmdResult res = m_icmd.RunCommand("ss -anp | grep 9092 | grep TAA");
+            CmnCmdResult res = m_icmd.RunCommand("ss -anp | grep "+ bu.m_port.ToString() + " | grep TAA");
+            if (res.m_exitCode != 0)
+            {
+                dres.m_status = DiagnoseStatus.Error;
+                dres.m_msg += res.m_error;
+            }
+            else
+            {
+                int TAACount = Regex.Matches(res.m_result, "TAA").Count;
+                int ESTABCount = Regex.Matches(res.m_result, "ESTAB").Count;
+                if (TAACount!=ESTABCount)
+                {
+                    dres.m_status = DiagnoseStatus.Error;
+                    dres.m_msg += res.m_result;
+                }
+            }
+            if (dres.m_status == DiagnoseStatus.Waiting)
+                dres.m_status = DiagnoseStatus.Okay;
             return dres;
         }
     }
