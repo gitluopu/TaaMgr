@@ -89,6 +89,7 @@ namespace Common
             string[] strAry = _info.Split(':');
             m_ip = strAry[0];
             m_port = int.Parse(strAry[1]);
+            if(strAry.Length>2)
             m_passwd = strAry[2];
         }
         public RedisUnit(string ip, int port, string passwd)
