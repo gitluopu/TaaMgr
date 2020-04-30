@@ -107,6 +107,7 @@ namespace TaaConf
                         } //end stringReader
                         string _status = "";
                         string _infs = "";
+                        string _status_detail="";
                         if (mainTaa != 0 && childTaa != 0 && infs.Count != 0) //running
                         {
                             _status = "running";
@@ -118,14 +119,19 @@ namespace TaaConf
                                 }
                                 _infs += ele;
                             }
+                            _status_detail = "childTaa="+childTaa.ToString();
                         }
                         else if (mainTaa != 0) //unhealthy
                         {
                             _status = "unknown";
+                            if (infs.Count == 0)
+                                _status_detail = "dumpcap stopped";
+                            _status_detail += ",childTaa=" + childTaa.ToString();
                         }
                         else
                         {
                             _status = "stop";
+                            _status_detail = "stopped";
                         }
                         if (_status == "running") //look up kafka broker
                         {
@@ -145,32 +151,34 @@ namespace TaaConf
                                 if (TAACount != ESTABCount)
                                 {
                                     _status = "unknown";
+                                    _status_detail = "unstable kafka broker";
                                 }
                             }
                         }
                         if (_status != m_taaStatus)
-                        {
                             m_taaStatus = _status;
-                        }
                         if (_infs != m_taaInfs)
-                        {
                             m_taaInfs = _infs;
-                        }
+                        if (_status_detail != m_statusDetail)
+                            m_statusDetail = _status_detail;
                         Thread.Sleep(500);
                     }
                 }
                 catch (Exception ex)
                 {
                     //MessageBox.Show(ex.Message);
+                    if (!m_tokenSource.IsCancellationRequested)
+                        m_tokenSource.Cancel();
+                    LogoutClick(this,null);
                     return;
                 }
-            }, m_tokenSource.Token);
+            });
 
         }
         private void SaveClick(object sender, RoutedEventArgs e)
         {
+            SetDataChanged(); //first run
             InitData();
-            SetDataChanged();
         }
         private void RefreshClick(object sender, RoutedEventArgs e)
         {
@@ -194,9 +202,12 @@ namespace TaaConf
         }
         public void Logout(object sender, RoutedEventArgs e)
         {
-            m_tokenSource.Cancel();
+            if (!m_tokenSource.IsCancellationRequested)
+            {
+                m_tokenSource.Cancel();
+                m_statusTask.Wait();
+            }
             m_tokenSource.Dispose();
-            m_statusTask.Wait();
         }
         public class ConfItem : INotifyPropertyChanged
         {
@@ -305,7 +316,13 @@ namespace TaaConf
             set { _m_taaIp = value; OnPropertyChanged("m_taaIp"); }
         }
 
+        private string _m_statusDetail;
 
+        public string m_statusDetail
+        {
+            get { return _m_statusDetail; }
+            set { _m_statusDetail = value; OnPropertyChanged("m_statusDetail"); }
+        }
 
         private void TaaStartClick(object sender, RoutedEventArgs e)
         {

@@ -64,10 +64,13 @@ namespace TaaMgr
        
         private void TaaConfOnLogout(object sender, RoutedEventArgs e)
         {
-            m_confCtl.Visibility = Visibility.Collapsed;
-            m_sshLoginCtl.Visibility = Visibility.Visible;
-            m_confCtl.Logout(sender,e);
-            m_sshLoginCtl.Logout(sender,e);
+            this.Dispatcher.Invoke(() =>
+            {
+                m_confCtl.Visibility = Visibility.Collapsed;
+                m_sshLoginCtl.Visibility = Visibility.Visible;
+                m_confCtl.Logout(sender, e);
+                m_sshLoginCtl.Logout(sender, e);
+            });
         }
         
         private void OnConsumeMsg(object sender, string e)

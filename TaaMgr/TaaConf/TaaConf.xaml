@@ -35,7 +35,7 @@
     <DockPanel LastChildFill="False">
         <StatusBar DockPanel.Dock="Bottom" >
             <TextBlock Text="{Binding m_taaIp}"></TextBlock>
-            <TextBlock Text="{Binding m_taaStatus}" Style="{StaticResource RunStatus}"></TextBlock>
+            <TextBlock Text="{Binding m_taaStatus}" Style="{StaticResource RunStatus}" ToolTip="{Binding m_statusDetail}"></TextBlock>
             <TextBlock Text="{Binding m_taaInfs}"></TextBlock>
         </StatusBar>
         <ListBox DockPanel.Dock="Left">

@@ -146,15 +146,18 @@ namespace CmdLib
                     string str = GetProperty(path, (src) =>
                 {
                     var obj = Confs.PolicyPlugin.CPolicyPlugin.FromJson(src);
-                    return obj.Config.Consumerconfig.Brokers;
+                    string broker =  obj.Config.Consumerconfig.Brokers;
+                    ret.Add(broker);
+                    broker = obj.Config.Producerconfig.Brokers;
+                    ret.Add(broker);
+                    return broker;
                 });
-                    ret.Add(str);
+                    
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message);
                 }
-
             }
             foreach (var path in strategies)
             {
@@ -172,22 +175,6 @@ namespace CmdLib
                     MessageBox.Show(ex.Message);
                 }
 
-            }
-            foreach (var path in strategies)
-            {
-                try
-                {
-                    string str = GetProperty(path, (src) =>
-                    {
-                        var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
-                        return obj.Config.Brokers;
-                    });
-                    ret.Add(str);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
             }
             string retStr = "";
             foreach (var ele in ret)
@@ -235,7 +222,7 @@ namespace CmdLib
             {
                 try
                 {
-                    string str = GetProperty(path, (src) =>
+                    SetProperty(path, (src) =>
                     {
                         var obj = Confs.StrategyPatternKafkaProducer.CStrategyPatternKafkaProducer.FromJson(src);
                         obj.Config.Brokers = broker;
